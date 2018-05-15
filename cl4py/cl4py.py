@@ -1,53 +1,29 @@
-import json
 import subprocess
-import queue
-import threading
+import os
+import io
+from .data import sexp
+from .read import read
 
-
-def lisp_decoder(obj):
-    if isinstance(object, dict):
-        cls = obj[':class']
-        if cls == 'CL:SYMBOL':
-            return obj['package'] + '::' + obj['name']
-        elif cls == obj['CL:CONS']:
-            return (obj['car'], obj['cdr'])
-        elif cls == 'CL:SIMPLE-VECTOR':
-            return obj['contents']
-        else:
-            return obj
+package = 'COMMON-LISP-USER'
 
 
 class Lisp:
     def __init__(self):
+        cl4py = os.path.dirname(__file__) + "/cl4py.lisp"
+        cmd = ['/usr/local/bin/sbcl', '--script', cl4py]
+        p = subprocess.Popen(cmd,
+                             stdin = subprocess.PIPE,
+                             stdout = subprocess.PIPE,
+                             stderr = subprocess.PIPE,
+                             shell = False)
+        self.stdin = io.TextIOWrapper(p.stdin, write_through=True,
+                                      line_buffering=1,
+                                      encoding='utf-8')
+        self.stdout = io.TextIOWrapper(p.stdout, encoding='utf-8')
+
+    def eval(self, expr):
         global package
-        cmd = ['ros', '-sp', 'cl-json', '-l', 'lisp.lisp', '-e', '(cl4py:cl4py)']
-        self.subprocess = subprocess.Popen(cmd,
-                                           stdin = subprocess.PIPE,
-                                           stdout = subprocess.PIPE,
-                                           stderr = subprocess.PIPE,
-                                           shell = True)
-
-    def lispify(self, obj):
-        if isinstance(obj, tuple):
-            result = False
-            for elt in obj[::-1]:
-                result = {'class' : 'CL:CONS',
-                          'car' : lispify(elt),
-                          'cdr' : result}
-            return result
-        else:
-            return obj
-
-    def pythonize(self, obj):
-        return obj
-
-
-    def roundtrip(self, obj):
-        return json.loads(json.dumps(self.lispify(obj)),
-                          object_hook=lisp_decoder)
-
-
-    def eval(self, obj):
-        print(json.dumps(obj, cls=LispEncoder))
-        #json.dump(obj, self.subprocess.stdin)
-        #values, dvars, error = json.load(self.subprocess.stdout)
+        self.stdin.write(sexp(expr) + '\n')
+        val, err, package = read(self.stdout), read(self.stdout), read(self.stdout)
+        if err: raise RuntimeError(str(err))
+        return val

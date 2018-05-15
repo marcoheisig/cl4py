@@ -24,6 +24,14 @@ class Readtable:
         self.macro_characters[char] = fn
 
 
+    def get_dispatch_macro_character(self, dchar, schar):
+        return self.macro_characters[(dchar, schar)]
+
+
+    def set_dispatch_macro_character(self, dchar, schar, f):
+        self.macro_characters[(dchar, schar)] = f
+
+
     def syntax_type(self, c):
         if c.isspace():
             return SyntaxType.WHITESPACE

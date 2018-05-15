@@ -1,57 +1,139 @@
 '''
 Correspondence of Python types and Lisp types in cl4py:
 
-| Python             | Lisp          | Comment                                |
-|--------------------+---------------+----------------------------------------|
-| True, False        | T, NIL        |                                        |
-| None               | NIL           |                                        |
-| int                | integer       |                                        |
-| float              | double-float  |                                        |
-| complex            | (complex *)   |                                        |
-| string             | string        |                                        |
-| list               | simple-vector |                                        |
-| tuple              | simple-vector | cl4py converts simple-vectors to lists |
-| range              | -             |                                        |
-| dict               | hash-table    |                                        |
-| cl4py.Cons         | cons          |                                        |
-| cl4py.Symbol       | symbol        |                                        |
-| cl4py.Package      | package       |                                        |
-| fractions.Fraction | ratio         |                                        |
-| numpy.array        | array         |                                        |
+| Python             |     | Lisp          |
+|--------------------+-----+---------------|
+| True, False        | <-> | T, NIL        |
+| None               | --> | NIL           |
+| int                | <-> | integer       |
+| float              | <-> | double-float  |
+| float              | <-- | single-float  |
+| complex            | <-> | (complex *)   |
+| string             | <-> | symbol        |
+| list               | <-> | simple-vector |
+| tuple              | --> | simple-vector |
+| dict               | <-> | hash-table    |
+| cl4py.Cons         | <-> | cons          |
+| cl4py.String       | <-> | string        |
+| fractions.Fraction | <-> | ratio         |
+| numpy.array        | <-> | array         |
 
 '''
+import re
+from fractions import Fraction
 
-def string(x):
-    if isinstance(x, str):
-        return x
-    elif isinstance(x, Symbol):
-        return x.name
-    else:
-        raise TypeError('Not a valid string designator: ' + str(x) + '.')
-
-def package(x):
-    if isinstance(x, Package):
-        return x
-    elif isinstance(x, str):
-        return Package(x)
-    elif isinstance(x, Symbol):
-        return Package(x.name)
-    else:
-        raise TypeError('Not a valid package designator: ' + str(x) + '.')
-
+class ListIterator:
+    def __init__(self, elt):
+        self.elt = elt
+    def __iter__(self):
+        return self
+    def __next__(self):
+        if isinstance(self.elt, Cons):
+            value = self.elt.car
+            self.elt = self.elt.cdr
+            return value
+        else:
+            raise StopIteration
 
 class Cons:
    def __init__(self, car, cdr):
        self.car = car
        self.cdr = cdr
 
+   def __repr__(self):
+       datum = self
+       content = ""
+       # TODO handle circularity
+       while isinstance(datum, Cons):
+           content += repr(datum.car) + ", "
+           datum = datum.cdr
+       if datum != None:
+           content += " . " + repr(datum)
+       return "cl4py.List(" + content + ")"
 
-class Symbol:
-    def __init__(self, name, package):
-        self.name = string(name)
-        self.package = Package(package)
+   def __iter__(self):
+       return ListIterator(self)
+
+class String:
+    def __init__(self, data):
+        if not isinstance(data, str):
+            raise RuntimeError("Not a string: " + str(data))
+        self.data = data
+    def __repr__(self):
+        return "cl4py.String(" + repr(self.data) + ")"
 
 
-class Package:
-    def __init__(self, name):
-        self.name = string(name)
+def List(*args):
+    head = None
+    for arg in args[::-1]:
+        head = Cons(arg, head)
+    return head
+
+
+def sexp(obj):
+    if obj is True:
+        return "T"
+    elif obj is False or obj is None:
+        return "NIL"
+    elif isinstance(obj,int):
+        return str(obj)
+    elif isinstance(obj,float):
+        return str(obj)
+    #TODO complex
+    elif isinstance(obj,str):
+        # TODO check for symbolness
+        return obj
+    elif isinstance(obj, list) or isinstance(obj, tuple):
+        return "#(" + " ".join(sexp(elt) for elt in obj) + ")"
+    # TODO dict
+    elif isinstance(obj,Cons):
+       datum = obj
+       content = ""
+       # TODO handle circularity
+       while isinstance(datum, Cons):
+           content += sexp(datum.car) + " "
+           datum = datum.cdr
+       if datum != None:
+           content += " . " + sexp(datum)
+       return "(" + content + ")"
+    elif isinstance(obj, String):
+        def escape(s):
+            return s.translate(str.maketrans({'"':'\\"', '\\':'\\\\'}))
+        return '"' + escape(obj.data) + '"'
+    elif isinstance(obj, Fraction):
+        return str(obj)
+    else:
+        raise RuntimeError('Cannot represent ' + str(token) + ' as an s-expression.')
+
+
+exponent_markers = 'DdEdFfLlSs'
+integer_regex = re.compile(r"[+-]?[0-9]+\.?")
+ratio_regex = re.compile(r"([+-]?[0-9]+)/([0-9]+)")
+float_regex = re.compile(r"[+-]?[0-9]*\.[0-9]+")
+symbol_regex = re.compile(r"([^:]+:)?:?([^:]+)")
+
+
+def parse(token):
+    # integer
+    m = re.fullmatch(integer_regex, token)
+    if m:
+        return int(m.group(0))
+    # ratio
+    m = re.fullmatch(ratio_regex, token)
+    if m:
+        return Fraction(int(m.group(1)), int(m.group(2)))
+    # float
+    m = re.fullmatch(float_regex, token)
+    if m:
+        # TODO handle all exponent markers
+        return float(token)
+    # symbol
+    m = re.fullmatch(symbol_regex, token)
+    if m:
+        pkg = m.group(1)
+        name = m.group(2)
+        if pkg in ['CL', 'COMMON-LISP', None]:
+            if name == 'T': return True
+            if name == 'NIL': return False
+        return token
+    raise RuntimeError('Failed to parse token "' + token + '".')
