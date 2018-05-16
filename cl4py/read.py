@@ -56,6 +56,7 @@ class Readtable:
         self.set_dispatch_macro_character('#', '\\', sharpsign_backslash)
         self.set_dispatch_macro_character('#', '(', sharpsign_left_parenthesis)
         self.set_dispatch_macro_character('#', '?', sharpsign_questionmark)
+        self.set_dispatch_macro_character('#', 'A', sharpsign_a)
 
 
     def get_macro_character(self, char):
@@ -194,11 +195,11 @@ def single_quote(r, s, c):
 def double_quote(r, s, c):
     result = ''
     while True:
-        c = stream.read_char()
+        c = s.read_char()
         if c == '"':
             return String(result)
         elif c == '\\':
-            result += stream.read_char()
+            result += s.read_char()
         else:
             result += c
 
@@ -236,3 +237,7 @@ def sharpsign_questionmark(r, s, c, n):
         obj = LispObject(r.lisp, n)
         r.foreign_objects[n] = obj
         return obj
+
+
+def sharpsign_a(r, s, c, n):
+    return

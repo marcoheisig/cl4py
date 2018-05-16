@@ -105,17 +105,18 @@
                 (*trace-output* (make-broadcast-stream))
                 (*readtable* *cl4py-readtable*)
                 (*read-eval* nil))
-            (ignore-errors (eval (read))))
-        (with-standard-io-syntax
-          (let ((*read-eval* nil))
-            ;; the value
-            (prin1 (wrap-foreign-objects value))
-            (terpri)
-            ;; the error code
-            (prin1 (if (not condition)
-                       nil
-                       (class-name (class-of condition))))
-            (terpri)
-            (finish-output)))))))
+            (ignore-errors
+             (unwind-protect (values (eval (read)))
+               (clear-input))))
+        (let ((*read-eval* nil))
+          ;; the value
+          (prin1 (wrap-foreign-objects value))
+          (terpri)
+          ;; the error code
+          (prin1 (if (not condition)
+                     nil
+                     (class-name (class-of condition))))
+          (terpri)
+          (finish-output))))))
 
 (cl4py)
