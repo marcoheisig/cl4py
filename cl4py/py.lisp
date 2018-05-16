@@ -51,7 +51,7 @@
 (defvar *cl4py-readtable*
   (let ((r (copy-readtable)))
     (set-dispatch-macro-character #\# #\! #'sharpsign-exclamation-mark r)
-    (set-dispatch-macro-character #\# #\! #'sharpsign-questionmark r)
+    (set-dispatch-macro-character #\# #\? #'sharpsign-questionmark r)
     (values r)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

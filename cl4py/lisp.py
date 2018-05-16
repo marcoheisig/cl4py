@@ -17,7 +17,12 @@ class Lisp:
                                       encoding='utf-8')
         self.stdout = io.TextIOWrapper(p.stdout, encoding='utf-8')
         self.foreign_objects = {}
-        self.readtable = Readtable()
+        self.readtable = Readtable(self)
+
+
+    def __del__(self):
+        self.stdin.write('(quit)\n')
+
 
     def eval(self, expr):
         self.stdin.write(sexp(expr) + '\n')

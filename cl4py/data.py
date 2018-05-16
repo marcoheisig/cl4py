@@ -15,6 +15,7 @@ Correspondence of Python types and Lisp types in cl4py:
 | dict               | <-> | hash-table         |
 | cl4py.Cons         | <-> | cons               |
 | cl4py.String       | <-> | string             |
+| cl4py.LispObject   | <-> | #N? handle         |
 | fractions.Fraction | <-> | ratio              |
 | numpy.array        | <-> | array              |
 
@@ -22,11 +23,28 @@ Correspondence of Python types and Lisp types in cl4py:
 import re
 from fractions import Fraction
 
+class LispObject:
+    def __init__(self, lisp, handle):
+        self.lisp = lisp
+        self.handle = handle
+
+    def __del__(self):
+        try:
+            self.lisp.eval('#{}!'.format(self.handle))
+        except:
+            pass
+
+    def __call__(self, *args):
+        return self.lisp.eval(List('CL:FUNCALL', self, *args))
+
+
 class ListIterator:
     def __init__(self, elt):
         self.elt = elt
+
     def __iter__(self):
         return self
+
     def __next__(self):
         if isinstance(self.elt, Cons):
             value = self.elt.car
@@ -99,6 +117,8 @@ def sexp(obj):
         def escape(s):
             return s.translate(str.maketrans({'"':'\\"', '\\':'\\\\'}))
         return '"' + escape(obj.data) + '"'
+    elif isinstance(obj, LispObject):
+        return "#{}?".format(obj.handle)
     elif isinstance(obj, Fraction):
         return str(obj)
     else:

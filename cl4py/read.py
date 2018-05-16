@@ -44,7 +44,8 @@ SyntaxType = Enum('SyntaxType',
 
 
 class Readtable:
-    def __init__(self):
+    def __init__(self, lisp):
+        self.lisp = lisp
         self.macro_characters = {}
         self.foreign_objects = {}
         self.set_macro_character('(', left_parenthesis)
@@ -54,7 +55,7 @@ class Readtable:
         self.set_macro_character('#', sharpsign)
         self.set_dispatch_macro_character('#', '\\', sharpsign_backslash)
         self.set_dispatch_macro_character('#', '(', sharpsign_left_parenthesis)
-        self.set_dispatch_macro_character('#', '(', sharpsign_left_parenthesis)
+        self.set_dispatch_macro_character('#', '?', sharpsign_questionmark)
 
 
     def get_macro_character(self, char):
@@ -228,3 +229,10 @@ def sharpsign_left_parenthesis(r, s, c, n):
     return list(r.read_delimited_list(")", s, True))
 
 
+def sharpsign_questionmark(r, s, c, n):
+    try:
+        return r.foreign_objects[n]
+    except:
+        obj = LispObject(r.lisp, n)
+        r.foreign_objects[n] = obj
+        return obj
