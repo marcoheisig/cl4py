@@ -1,22 +1,22 @@
 '''
 Correspondence of Python types and Lisp types in cl4py:
 
-| Python             |     | Lisp          |
-|--------------------+-----+---------------|
-| True, False        | <-> | T, NIL        |
-| None               | --> | NIL           |
-| int                | <-> | integer       |
-| float              | <-> | double-float  |
-| float              | <-- | single-float  |
-| complex            | <-> | (complex *)   |
-| string             | <-> | symbol        |
-| list               | <-> | simple-vector |
-| tuple              | --> | simple-vector |
-| dict               | <-> | hash-table    |
-| cl4py.Cons         | <-> | cons          |
-| cl4py.String       | <-> | string        |
-| fractions.Fraction | <-> | ratio         |
-| numpy.array        | <-> | array         |
+| Python             |     | Lisp               |
+|--------------------+-----+--------------------|
+| True, False        | <-> | T, NIL             |
+| None               | --> | NIL                |
+| int                | <-> | integer            |
+| float              | <-> | double-float       |
+| float              | <-- | single-float       |
+| complex            | <-> | (complex *)        |
+| string             | <-> | inserted literally |
+| list               | <-> | simple-vector      |
+| tuple              | --> | simple-vector      |
+| dict               | <-> | hash-table         |
+| cl4py.Cons         | <-> | cons               |
+| cl4py.String       | <-> | string             |
+| fractions.Fraction | <-> | ratio              |
+| numpy.array        | <-> | array              |
 
 '''
 import re
@@ -81,7 +81,6 @@ def sexp(obj):
         return str(obj)
     #TODO complex
     elif isinstance(obj,str):
-        # TODO check for symbolness
         return obj
     elif isinstance(obj, list) or isinstance(obj, tuple):
         return "#(" + " ".join(sexp(elt) for elt in obj) + ")"

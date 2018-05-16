@@ -1,5 +1,4 @@
-from .data import *
-from .readtable import Readtable
-from .read import read
-from .cl4py import Lisp
+from .data import List, Cons, String
+from .read import Readtable
+from .lisp import Lisp
 
