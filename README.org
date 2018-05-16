@@ -14,7 +14,7 @@ You can start any number of Lisp subprocesses within Python, like this:
 #+BEGIN_SRC python
 import cl4py
 
-lisp = Lisp()
+lisp = cl4py.Lisp()
 #+END_SRC
 
 Once you have a running Lisp process, you can execute Lisp code on it:
