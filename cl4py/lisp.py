@@ -5,6 +5,14 @@ import importlib
 from .data import *
 from .read import Readtable
 
+
+def pythonize(name):
+    name = name.replace('-', '_')
+    if name.isupper():
+        name = name.lower()
+    return name
+
+
 class Lisp:
     def __init__(self):
         cmd = ['/usr/local/bin/sbcl', '--script', os.path.dirname(__file__) + "/py.lisp"]
@@ -36,18 +44,17 @@ class Lisp:
         return val
 
 
-    def register(self, name):
+    def find_package(self, name):
         spec = importlib.machinery.ModuleSpec(name, None)
         module = importlib.util.module_from_spec(spec)
         query = List('loop', 'for', 'symbol', 'being', 'each', 'external-symbol', 'of', String(name),
                      'when', List('fboundp', 'symbol'),
+                     'unless', List('special-operator-p', 'symbol'),
+                     'unless', List('macro-function', 'symbol'),
                      'collect', List('Cons',
                                      List('symbol-name', 'symbol'),
                                      List('symbol-function', 'symbol')))
         for cons in self.eval(query):
             if isinstance(cons.car, String):
-                name = cons.car.data
-                if name.isupper():
-                    name = name.lower()
-                setattr(module, name, cons.cdr)
+                setattr(module, pythonize(cons.car.data), cons.cdr)
         return module

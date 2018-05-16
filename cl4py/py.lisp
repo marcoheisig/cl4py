@@ -81,10 +81,6 @@
   ;; TODO
   hash-table)
 
-(defmethod wrap-foreign-objects ((array array))
-  ;; TODO
-  (register-foreign-object array))
-
 (defmethod wrap-foreign-objects ((cons cons))
   (cons (wrap-foreign-objects (car cons))
         (wrap-foreign-objects (cdr cons))))

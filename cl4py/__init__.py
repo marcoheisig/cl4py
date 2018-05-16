@@ -1,3 +1,3 @@
-from .data import List, Cons, String
+from .data import List, ListQ, Cons, String
 from .lisp import Lisp
 

@@ -66,7 +66,7 @@ class Cons:
            content += repr(datum.car) + ", "
            datum = datum.cdr
        if datum != None:
-           content += " . " + repr(datum)
+           return "cl4py.Cons(" + repr(self.car) + ", " + repr(self.cdr) + ")"
        return "cl4py.List(" + content + ")"
 
    def __iter__(self):
@@ -77,8 +77,12 @@ class String:
         if not isinstance(data, str):
             raise RuntimeError("Not a string: " + str(data))
         self.data = data
+
     def __repr__(self):
         return "cl4py.String(" + repr(self.data) + ")"
+
+    def __str__(self):
+        return str(self.data)
 
 
 def List(*args):
@@ -86,6 +90,10 @@ def List(*args):
     for arg in args[::-1]:
         head = Cons(arg, head)
     return head
+
+
+def ListQ(*args):
+    return List('CL:QUOTE', List(*args))
 
 
 def sexp(obj):

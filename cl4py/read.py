@@ -47,7 +47,6 @@ class Readtable:
     def __init__(self, lisp):
         self.lisp = lisp
         self.macro_characters = {}
-        self.foreign_objects = {}
         self.set_macro_character('(', left_parenthesis)
         self.set_macro_character(')', right_parenthesis)
         self.set_macro_character("'", single_quote)
@@ -232,10 +231,10 @@ def sharpsign_left_parenthesis(r, s, c, n):
 
 def sharpsign_questionmark(r, s, c, n):
     try:
-        return r.foreign_objects[n]
+        return r.lisp.foreign_objects[n]
     except:
         obj = LispObject(r.lisp, n)
-        r.foreign_objects[n] = obj
+        r.lisp.foreign_objects[n] = obj
         return obj
 
 
