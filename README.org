@@ -26,7 +26,7 @@ add = lisp.eval("(function +)")
 add(1, 2, 3, 4) # returns 10
 
 div = lisp.eval("(function /)")
-div(2/4) # returns Fraction(1, 2)
+div(2, 4) # returns Fraction(1, 2)
 #+END_SRC
 
 Some Lisp data structures have no direct equivalent in Python, most
@@ -55,7 +55,7 @@ cl = lisp.find_package('CL')
 
 cl.oppd(5) # returns True
 
-cl.cons(5, None) # returns cl4py.List(5,)
+cl.cons(5, None) # returns cl4py.List(5)
 
 cl.remove(5, [1, 5, 2, 7, 5, 9]) # returns [1, 2, 3, 4]
 

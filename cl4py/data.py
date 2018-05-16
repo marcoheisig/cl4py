@@ -63,8 +63,10 @@ class Cons:
        content = ""
        # TODO handle circularity
        while isinstance(datum, Cons):
-           content += repr(datum.car) + ", "
+           content += repr(datum.car)
            datum = datum.cdr
+           if isinstance(datum, Cons):
+               content += ", "
        if datum != None:
            return "cl4py.Cons(" + repr(self.car) + ", " + repr(self.cdr) + ")"
        return "cl4py.List(" + content + ")"
