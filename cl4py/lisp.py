@@ -14,9 +14,8 @@ def pythonize(name):
 
 
 class Lisp:
-    def __init__(self):
-        cmd = ['/usr/local/bin/sbcl', '--script', os.path.dirname(__file__) + "/py.lisp"]
-        p = subprocess.Popen(cmd,
+    def __init__(self, cmd=['sbcl', '--script']):
+        p = subprocess.Popen(cmd + [os.path.dirname(__file__) + "/py.lisp"],
                              stdin = subprocess.PIPE,
                              stdout = subprocess.PIPE,
                              stderr = subprocess.PIPE,
