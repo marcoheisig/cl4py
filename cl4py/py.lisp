@@ -92,6 +92,18 @@
 ;;;
 ;;; The cl4py REPL
 
+(defgeneric condition-string (condition))
+
+(defmethod condition-string ((condition condition))
+  (with-output-to-string (stream)
+    (terpri stream)
+    (describe condition stream)))
+
+(defmethod condition-string ((simple-condition simple-condition))
+  (apply #'format nil
+         (simple-condition-format-control simple-condition)
+         (simple-condition-format-arguments simple-condition)))
+
 (defun cl4py (&rest args)
   (declare (ignore args))
   (loop
@@ -99,8 +111,7 @@
       (multiple-value-bind (value condition)
           (let ((*standard-output* (make-broadcast-stream))
                 (*trace-output* (make-broadcast-stream))
-                (*readtable* *cl4py-readtable*)
-                (*read-eval* nil))
+                (*readtable* *cl4py-readtable*))
             (ignore-errors
              (unwind-protect (values (eval (read)))
                (clear-input))))
@@ -109,9 +120,11 @@
           (prin1 (wrap-foreign-objects value))
           (terpri)
           ;; the error code
-          (prin1 (if (not condition)
-                     nil
-                     (class-name (class-of condition))))
+          (if (not condition)
+              (prin1 nil)
+              (prin1
+               (list (class-name (class-of condition))
+                     (condition-string condition))))
           (terpri)
           (finish-output))))))
 

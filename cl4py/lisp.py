@@ -39,8 +39,18 @@ class Lisp:
         self.stdin.write(sexp(expr) + '\n')
         val = self.readtable.read(self.stdout)
         err = self.readtable.read(self.stdout)
-        if err: raise RuntimeError(str(err))
+        if err:
+            condition = err.car
+            msg = err.cdr.car.data if err.cdr else ""
+            def init(self):
+                RuntimeError.__init__(self, msg)
+            raise type(condition, (RuntimeError,),
+                       {'__init__': init})()
         return val
+
+
+    def load(self, file):
+        return self.eval(List('CL:LOAD', String(file)))
 
 
     def find_package(self, name):
