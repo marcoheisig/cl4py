@@ -1,13 +1,13 @@
 # cl4py - Common Lisp for Python
 
-The cl4py (pronounce as _clappy_) library allows Python programs to call
+The library cl4py (pronounce as _clappy_) allows Python programs to call
 Common Lisp libraries.
 
 ## Motivation
 
 You are a Python programmer, but you want access to some of the powerful
 features of Lisp, for example to compile code at run time? Or you want to
-use some [awesome Lisp libraries](https://www.quicklisp.org/beta/releases.html)?
+use some [awesome Lisp libraries](http://codys.club/awesome-cl/)?
 In that case, cl4py is here to help you.
 
 ## Tutorial
@@ -19,8 +19,9 @@ lisp = cl4py.Lisp()
 ```
 
 Of course, this requires you have some Lisp installed. If not, use
-something like `apt install sbcl` to correct this deficiency.
-Once you have a running Lisp process, you can execute Lisp code on it:
+something like `apt install sbcl`, `pacman -S sbcl` or `brew install sbcl`
+to correct this deficiency.  Once you have a running Lisp process, you can
+execute Lisp code on it:
 ```
 lisp.eval("(+ 2 3)") # returns 5
 
@@ -65,10 +66,10 @@ cl.remove(5, [1, 5, 2, 7, 5, 9]) # returns [1, 2, 3, 4]
 cl.mapcar(cl.constantly(4), cl4py.ListQ(1, 2, 3)) # returns cl4py.List(4, 4, 4)
 ```
 
-For convenience, Python strings are not treated as Lisp
-strings, but inserted literally into the Lisp code. This means that in
-order to actually send a string to Lisp, it must be wrapped into a
-cl4py.String, like this:
+For convenience, Python strings are not treated as Lisp strings, but
+inserted literally into the evaluated Lisp code. This means that in order
+to actually send a string to Lisp, it must be wrapped into a cl4py.String,
+like this:
 
 ```
 lisp.eval(cl4py.String("foo")) # returns cl4py.String("foo")
@@ -92,7 +93,8 @@ lisp.eval(cl4py.String("foo")) # returns cl4py.String("foo")
     e.g., NumPy. And people are probably hesitant to migrate away from
     CPython.
 - [Hy](http://docs.hylang.org/en/stable/) - Python, but with Lisp
-  syntax. This project is certainly a great way to get started with
-  Lisp. It allows you to study the advantages of Lisp's _weird_ syntax,
-  without leaving the comfortable Python ecosystem. Once you understand the
-  advantages of Lisp, you will doubly appreciate cl4py for your projects.
+    syntax. This project is certainly a great way to get started with
+    Lisp. It allows you to study the advantages of Lisp's seemingly weird
+    syntax, without leaving the comfortable Python ecosystem. Once you
+    understand the advantages of Lisp, you will doubly appreciate cl4py for
+    your projects.
