@@ -11,7 +11,7 @@ Correspondence of Python types and Lisp types in cl4py:
 | complex            | <-> | (complex *)        |
 | string             | <-> | inserted literally |
 | list               | <-> | simple-vector      |
-| tuple              | --> | simple-vector      |
+| tuple              | --> | list               |
 | dict               | <-> | hash-table         |
 | cl4py.Cons         | <-> | cons               |
 | cl4py.String       | <-> | string             |
@@ -35,7 +35,7 @@ class LispObject:
             pass
 
     def __call__(self, *args):
-        return self.lisp.eval(List('CL:FUNCALL', self, *args))
+        return self.lisp.eval(List('CL:FUNCALL', self, *[Quote(arg) for arg in args]))
 
 
 class ListIterator:
@@ -94,8 +94,8 @@ def List(*args):
     return head
 
 
-def ListQ(*args):
-    return List('CL:QUOTE', List(*args))
+def Quote(arg):
+    return List('CL:QUOTE', arg)
 
 
 def sexp(obj):
@@ -110,8 +110,10 @@ def sexp(obj):
     #TODO complex
     elif isinstance(obj,str):
         return obj
-    elif isinstance(obj, list) or isinstance(obj, tuple):
+    elif isinstance(obj, list):
         return "#(" + " ".join(sexp(elt) for elt in obj) + ")"
+    elif isinstance(obj, tuple):
+        return sexp(List(*obj))
     # TODO dict
     elif isinstance(obj,Cons):
        datum = obj

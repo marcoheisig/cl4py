@@ -19,8 +19,8 @@ You can start any number of Lisp subprocesses within Python, like this:
 
 .. code:: python
 
-    import cl4py
-    lisp = cl4py.Lisp()
+    >>> import cl4py
+    >>> lisp = cl4py.Lisp()
 
 Of course, this requires you have some Lisp installed. If not, use
 something like ``apt install sbcl``, ``pacman -S sbcl`` or
@@ -29,30 +29,35 @@ running Lisp process, you can execute Lisp code on it:
 
 .. code:: python
 
-    lisp.eval("(+ 2 3)") # returns 5
+    >>> lisp.eval("(+ 2 3)")
+    5
 
-    add = lisp.eval("(function +)")
-    add(1, 2, 3, 4) # returns 10
+    >>> add = lisp.eval("(function +)")
+    >>> add(1, 2, 3, 4)
+    10
 
-    div = lisp.eval("(function /)")
-    div(2, 4) # returns Fraction(1, 2)
+    >>> div = lisp.eval("(function /)")
+    >>> div(2, 4)
+    Fraction(1, 2)
 
 Some Lisp data structures have no direct equivalent in Python, most
 notably, cons cells.
 
 .. code:: python
 
-    lisp.eval("(cons 1 2)") # returns cl4py.Cons(1, 2)
+    >>> lisp.eval("(cons 1 2)")
+    cl4py.Cons(1, 2)
 
-    lst = lisp.eval("(cons 1 (cons 2 nil))") # returns cl4py.List(1, 2)
-    lst.car # returns 1
-    lst.cdr # returns cl4py.List(2), an abbreviation for cl4py.Cons(2, None)
+    >>> lst = lisp.eval("(cons 1 (cons 2 nil))")
+    cl4py.List(1, 2)
+    >>> lst.car
+    1
+    >>> lst.cdr
+    cl4py.List(2) # an abbreviation for cl4py.Cons(2, None)
 
     # conversion works vice versa, too:
-    lisp.eval(cl4py.List('+', 2, 9)) # 11
-
-    # you can automatically quote lists with ListQ
-    lisp.eval(cl4py.ListQ('+', 2, 9)) # cl4py.List('+', 2, 9)
+    >>> lisp.eval(cl4py.List('+', 2, 9))
+    11
 
 It soon becomes clumsy to look up individual Lisp functions by name.
 Instead, it is possible to convert entire Lisp packages to Python
@@ -60,16 +65,19 @@ modules, like this:
 
 .. code:: python
 
-    cl = lisp.find_package('CL')
+    >>> cl = lisp.find_package('CL')
+    >>> cl.oppd(5)
+    True
 
-    cl.oppd(5) # returns True
+    >>> cl.cons(5, None)
+    cl4py.List(5)
 
-    cl.cons(5, None) # returns cl4py.List(5)
-
-    cl.remove(5, [1, 5, 2, 7, 5, 9]) # returns [1, 2, 3, 4]
+    >>> cl.remove(5, [1, 5, 2, 7, 5, 9])
+    [1, 2, 3, 4]
 
     # Higher-order functions work, too!
-    cl.mapcar(cl.constantly(4), cl4py.ListQ(1, 2, 3)) # returns cl4py.List(4, 4, 4)
+    >>> cl.mapcar(cl.constantly(4), Quote(1, 2, 3))
+    cl4py.List(4, 4, 4)
 
 For convenience, Python strings are not treated as Lisp strings, but
 inserted literally into the evaluated Lisp code. This means that in
@@ -78,7 +86,8 @@ cl4py.String, like this:
 
 .. code:: python
 
-    lisp.eval(cl4py.String("foo")) # returns cl4py.String("foo")
+    >>> lisp.eval(cl4py.String("foo"))
+    cl4py.String("foo")
 
 Related Projects
 ----------------

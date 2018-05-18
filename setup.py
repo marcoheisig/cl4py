@@ -14,14 +14,13 @@ def readme():
 
 setup(
     name='cl4py',
-    version='1.0.5',
+    version='1.1.2',
     description='Common Lisp for Python',
     long_description=readme(),
     license='MIT',
     url='https://github.com/marcoheisig/cl4py',
     author='Marco Heisig',
     author_email='marco.heisig@fau.de',
-    packages=find_packages(exclude=['contrib', 'docs', 'test']),
     install_requires=[],
     extras_require={},
     keywords='foreign functions FFI',
@@ -35,4 +34,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Lisp' ,
     ],
+    packages=find_packages(exclude=['contrib', 'docs', 'test']),
+    include_package_data = True,
+    package_data={'': ['*.lisp']},
 )
