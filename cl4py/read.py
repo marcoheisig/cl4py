@@ -12,6 +12,7 @@ from .data import *
 # 4. *READ-EVAL* is always false.
 # 5. *READ-BASE* is always 10.
 # 6. There are no invalid characters.
+# 7. The input is assumed to be well formed.
 
 class Stream:
     def __init__(self, textstream):
@@ -56,6 +57,7 @@ class Readtable:
         self.set_dispatch_macro_character('#', '(', sharpsign_left_parenthesis)
         self.set_dispatch_macro_character('#', '?', sharpsign_questionmark)
         self.set_dispatch_macro_character('#', 'A', sharpsign_a)
+        self.set_dispatch_macro_character('#', 'C', sharpsign_c)
 
 
     def get_macro_character(self, char):
@@ -171,7 +173,6 @@ class Readtable:
                 return head.cdr
             elif x == '.':
                 tail.cdr = self.read(stream, True)
-                # TODO handle errors
             else:
                 stream.unread_char()
                 cons = Cons(self.read(stream, True), None)
@@ -241,3 +242,7 @@ def sharpsign_questionmark(r, s, c, n):
 def sharpsign_a(r, s, c, n):
     # TODO
     return
+
+def sharpsign_c(r, s, c, n):
+    (real, imag) =  list(r.read(s))
+    return complex(real, imag)

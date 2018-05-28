@@ -37,6 +37,9 @@ class LispObject:
     def __call__(self, *args):
         return self.lisp.eval(List('CL:FUNCALL', self, *[Quote(arg) for arg in args]))
 
+    def __sexp__(self):
+        return "#{}?".format(self.handle)
+
 
 class ListIterator:
     def __init__(self, elt):
@@ -71,6 +74,17 @@ class Cons:
            return "cl4py.Cons(" + repr(self.car) + ", " + repr(self.cdr) + ")"
        return "cl4py.List(" + content + ")"
 
+   def __sexp__(self):
+       datum = self
+       content = ""
+       # TODO handle circularity
+       while isinstance(datum, Cons):
+           content += sexp(datum.car) + " "
+           datum = datum.cdr
+       if datum != None:
+           content += " . " + sexp(datum)
+       return "(" + content + ")"
+
    def __iter__(self):
        return ListIterator(self)
 
@@ -86,6 +100,11 @@ class String:
     def __str__(self):
         return str(self.data)
 
+    def __sexp__(self):
+        def escape(s):
+            return s.translate(str.maketrans({'"':'\\"', '\\':'\\\\'}))
+        return '"' + escape(self.data) + '"'
+
 
 def List(*args):
     head = None
@@ -98,43 +117,25 @@ def Quote(arg):
     return List('CL:QUOTE', arg)
 
 
+sexp_table = {
+    bool       : lambda x: "T" if x else "NIL",
+    type(None) : lambda x: "NIL",
+    int        : str,
+    float      : str,
+    complex    : lambda x: "#C(" + sexp(x.real) + " " + sexp(x.imag) + ")",
+    str        : lambda x: x,
+    list       : lambda x: "#(" + " ".join(sexp(elt) for elt in x) + ")",
+    tuple      : lambda x: sexp(List(*x)),
+    # dict     : lambda x: TODO
+    Fraction   : str,
+}
+
+
 def sexp(obj):
-    if obj is True:
-        return "T"
-    elif obj is False or obj is None:
-        return "NIL"
-    elif isinstance(obj,int):
-        return str(obj)
-    elif isinstance(obj,float):
-        return str(obj)
-    #TODO complex
-    elif isinstance(obj,str):
-        return obj
-    elif isinstance(obj, list):
-        return "#(" + " ".join(sexp(elt) for elt in obj) + ")"
-    elif isinstance(obj, tuple):
-        return sexp(List(*obj))
-    # TODO dict
-    elif isinstance(obj,Cons):
-       datum = obj
-       content = ""
-       # TODO handle circularity
-       while isinstance(datum, Cons):
-           content += sexp(datum.car) + " "
-           datum = datum.cdr
-       if datum != None:
-           content += " . " + sexp(datum)
-       return "(" + content + ")"
-    elif isinstance(obj, String):
-        def escape(s):
-            return s.translate(str.maketrans({'"':'\\"', '\\':'\\\\'}))
-        return '"' + escape(obj.data) + '"'
-    elif isinstance(obj, LispObject):
-        return "#{}?".format(obj.handle)
-    elif isinstance(obj, Fraction):
-        return str(obj)
+    if type(obj) in sexp_table:
+        return sexp_table[type(obj)](obj)
     else:
-        raise RuntimeError('Cannot represent ' + str(token) + ' as an s-expression.')
+        return obj.__sexp__()
 
 
 exponent_markers = 'DdEdFfLlSs'
