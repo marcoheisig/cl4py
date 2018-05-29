@@ -1,4 +1,3 @@
-import io
 import re
 from enum import Enum
 from .data import *
@@ -91,10 +90,6 @@ class Readtable:
             return SyntaxType.CONSTITUENT
 
 
-    def read_from_string(self, string):
-        return self.read(io.StringIO(string))
-
-
     def read(self, stream, recursive=False):
         if not isinstance(stream, Stream):
             stream = Stream(stream)
@@ -178,6 +173,39 @@ class Readtable:
                 cons = Cons(self.read(stream, True), None)
                 tail.cdr = cons
                 tail = cons
+
+
+exponent_markers = 'DdEdFfLlSs'
+integer_regex = re.compile(r"[+-]?[0-9]+\.?")
+ratio_regex = re.compile(r"([+-]?[0-9]+)/([0-9]+)")
+float_regex = re.compile(r"[+-]?[0-9]*\.[0-9]+")
+symbol_regex = re.compile(r"([^:]+:)?:?([^:]+)")
+
+
+def parse(token):
+    # integer
+    m = re.fullmatch(integer_regex, token)
+    if m:
+        return int(m.group(0))
+    # ratio
+    m = re.fullmatch(ratio_regex, token)
+    if m:
+        return Fraction(int(m.group(1)), int(m.group(2)))
+    # float
+    m = re.fullmatch(float_regex, token)
+    if m:
+        # TODO handle all exponent markers
+        return float(token)
+    # symbol
+    m = re.fullmatch(symbol_regex, token)
+    if m:
+        pkg = m.group(1)
+        name = m.group(2)
+        if pkg in ['CL', 'COMMON-LISP', None]:
+            if name == 'T': return True
+            if name == 'NIL': return False
+        return token
+    raise RuntimeError('Failed to parse token "' + token + '".')
 
 
 def left_parenthesis(r, s, c):

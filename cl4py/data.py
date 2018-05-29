@@ -37,9 +37,6 @@ class LispObject:
     def __call__(self, *args):
         return self.lisp.eval(List('CL:FUNCALL', self, *[Quote(arg) for arg in args]))
 
-    def __sexp__(self):
-        return "#{}?".format(self.handle)
-
 
 class ListIterator:
     def __init__(self, elt):
@@ -74,17 +71,6 @@ class Cons:
            return "cl4py.Cons(" + repr(self.car) + ", " + repr(self.cdr) + ")"
        return "cl4py.List(" + content + ")"
 
-   def __sexp__(self):
-       datum = self
-       content = ""
-       # TODO handle circularity
-       while isinstance(datum, Cons):
-           content += sexp(datum.car) + " "
-           datum = datum.cdr
-       if datum != None:
-           content += " . " + sexp(datum)
-       return "(" + content + ")"
-
    def __iter__(self):
        return ListIterator(self)
 
@@ -100,11 +86,6 @@ class String:
     def __str__(self):
         return str(self.data)
 
-    def __sexp__(self):
-        def escape(s):
-            return s.translate(str.maketrans({'"':'\\"', '\\':'\\\\'}))
-        return '"' + escape(self.data) + '"'
-
 
 def List(*args):
     head = None
@@ -115,57 +96,3 @@ def List(*args):
 
 def Quote(arg):
     return List('CL:QUOTE', arg)
-
-
-sexp_table = {
-    bool       : lambda x: "T" if x else "NIL",
-    type(None) : lambda x: "NIL",
-    int        : str,
-    float      : str,
-    complex    : lambda x: "#C(" + sexp(x.real) + " " + sexp(x.imag) + ")",
-    str        : lambda x: x,
-    list       : lambda x: "#(" + " ".join(sexp(elt) for elt in x) + ")",
-    tuple      : lambda x: sexp(List(*x)),
-    # dict     : lambda x: TODO
-    Fraction   : str,
-}
-
-
-def sexp(obj):
-    if type(obj) in sexp_table:
-        return sexp_table[type(obj)](obj)
-    else:
-        return obj.__sexp__()
-
-
-exponent_markers = 'DdEdFfLlSs'
-integer_regex = re.compile(r"[+-]?[0-9]+\.?")
-ratio_regex = re.compile(r"([+-]?[0-9]+)/([0-9]+)")
-float_regex = re.compile(r"[+-]?[0-9]*\.[0-9]+")
-symbol_regex = re.compile(r"([^:]+:)?:?([^:]+)")
-
-
-def parse(token):
-    # integer
-    m = re.fullmatch(integer_regex, token)
-    if m:
-        return int(m.group(0))
-    # ratio
-    m = re.fullmatch(ratio_regex, token)
-    if m:
-        return Fraction(int(m.group(1)), int(m.group(2)))
-    # float
-    m = re.fullmatch(float_regex, token)
-    if m:
-        # TODO handle all exponent markers
-        return float(token)
-    # symbol
-    m = re.fullmatch(symbol_regex, token)
-    if m:
-        pkg = m.group(1)
-        name = m.group(2)
-        if pkg in ['CL', 'COMMON-LISP', None]:
-            if name == 'T': return True
-            if name == 'NIL': return False
-        return token
-    raise RuntimeError('Failed to parse token "' + token + '".')

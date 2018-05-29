@@ -5,13 +5,7 @@ import importlib.util
 from pkg_resources import resource_filename
 from .data import *
 from .read import Readtable
-
-
-def pythonize(name):
-    name = name.replace('-', '_')
-    if name.isupper():
-        name = name.lower()
-    return name
+from .lispify import lispify
 
 
 class Lisp:
@@ -37,7 +31,7 @@ class Lisp:
 
 
     def eval(self, expr):
-        self.stdin.write(sexp(expr) + '\n')
+        self.stdin.write(lispify(self, expr) + '\n')
         val = self.readtable.read(self.stdout)
         err = self.readtable.read(self.stdout)
         if err:
@@ -64,6 +58,13 @@ class Lisp:
                  'collect', ('Cons',
                              ('symbol-name', 'symbol'),
                              ('symbol-function', 'symbol')))
+
+        def pythonize(name):
+            name = name.replace('-', '_')
+            if name.isupper():
+                name = name.lower()
+            return name
+
         for cons in self.eval(query):
             if isinstance(cons.car, String):
                 setattr(module, pythonize(cons.car.data), cons.cdr)
