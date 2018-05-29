@@ -23,6 +23,7 @@ Correspondence of Python types and Lisp types in cl4py:
 import re
 from fractions import Fraction
 
+
 class LispObject:
     def __init__(self, lisp, handle):
         self.lisp = lisp
@@ -54,25 +55,38 @@ class ListIterator:
             raise StopIteration
 
 class Cons:
-   def __init__(self, car, cdr):
-       self.car = car
-       self.cdr = cdr
+    visited = set()
 
-   def __repr__(self):
-       datum = self
-       content = ""
-       # TODO handle circularity
-       while isinstance(datum, Cons):
-           content += repr(datum.car)
-           datum = datum.cdr
-           if isinstance(datum, Cons):
-               content += ", "
-       if datum != None:
-           return "Cons(" + repr(self.car) + ", " + repr(self.cdr) + ")"
-       return "List(" + content + ")"
+    def __init__(self, car, cdr):
+        self.car = car
+        self.cdr = cdr
 
-   def __iter__(self):
-       return ListIterator(self)
+    def __repr__(self):
+        initial_cons = not Cons.visited
+        if self in Cons.visited:
+            return "Cons(...)"
+        body = ""
+        datum = self
+        while isinstance(datum, Cons):
+            if datum in Cons.visited:
+                body += "..."
+                datum = None
+            else:
+                Cons.visited |= {datum}
+                body += repr(datum.car)
+                datum = datum.cdr
+                if isinstance(datum, Cons):
+                    body += ", "
+        if datum is None:
+            result = "List(" + body + ")"
+        else:
+            result = "DottedList(" + body + ", " + repr(datum) + ")"
+        if initial_cons:
+            Cons.visited.clear()
+        return result
+
+    def __iter__(self):
+        return ListIterator(self)
 
 class String:
     def __init__(self, data):
@@ -90,6 +104,13 @@ class String:
 def List(*args):
     head = None
     for arg in args[::-1]:
+        head = Cons(arg, head)
+    return head
+
+
+def DottedList(*args):
+    head = args[-1] if args else None
+    for arg in args[-2::-1]:
         head = Cons(arg, head)
     return head
 

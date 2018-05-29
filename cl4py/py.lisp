@@ -35,7 +35,7 @@
   (prin1 (handle-wrapper-handle object) stream)
   (write-char #\? stream))
 
-(defun register-foreign-object (object)
+(defun wrap-foreign-object (object)
   (let ((handle (incf *handle-counter*)))
     (setf (handle-object handle) object)
     (make-handle-wrapper :handle handle)))
@@ -63,30 +63,54 @@
 ;;; sending them to Python and replace occurrences of non serializable
 ;;; objects with reference handles.
 
-(defgeneric wrap-foreign-objects (object))
+(defvar *object-copies* nil)
 
-(defmethod wrap-foreign-objects ((object t))
-  (register-foreign-object object))
+(defun prepare-object (object)
+  (let ((*object-copies* (make-hash-table)))
+    (copy-or-wrap object)))
 
-(defmethod wrap-foreign-objects ((symbol symbol))
+(defgeneric copy-or-wrap (object))
+
+(defgeneric initialize (object prototype))
+
+(defmethod copy-or-wrap :around (object)
+  (multiple-value-bind (value present-p)
+      (gethash object *object-copies*)
+    (if present-p
+        value
+        (let ((copy (call-next-method)))
+          (setf (gethash object *object-copies*) copy)
+          (initialize copy object)
+          copy))))
+
+(defmethod copy-or-wrap ((object t))
+  (wrap-foreign-object object))
+
+(defmethod initialize (object prototype)
+  (declare (ignore object prototype))
+  (values))
+
+(defmethod copy-or-wrap ((symbol symbol))
   symbol)
 
-(defmethod wrap-foreign-objects ((number number))
+(defmethod copy-or-wrap ((number number))
   number)
 
-(defmethod wrap-foreign-objects ((string string))
-  string)
+(defmethod copy-or-wrap ((character character))
+  character)
 
-(defmethod wrap-foreign-objects ((hash-table hash-table))
-  ;; TODO
-  hash-table)
+(defmethod copy-or-wrap ((cons cons))
+  (cons nil nil))
 
-(defmethod wrap-foreign-objects ((cons cons))
-  (cons (wrap-foreign-objects (car cons))
-        (wrap-foreign-objects (cdr cons))))
+(defmethod initialize ((copy cons) (prototype cons))
+  (setf (car copy) (copy-or-wrap (car prototype)))
+  (setf (cdr copy) (copy-or-wrap (cdr prototype))))
 
-(defmethod wrap-foreign-objects ((sequence sequence))
-  (map (type-of sequence) #'wrap-foreign-objects sequence))
+(defmethod copy-or-wrap ((sequence sequence))
+  (make-sequence (type-of sequence) (length sequence)))
+
+(defmethod initialize ((copy sequence) (prototype sequence))
+  (map-into copy #'copy-or-wrap prototype))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -115,9 +139,10 @@
             (ignore-errors
              (unwind-protect (values (eval (read)))
                (clear-input))))
-        (let ((*read-eval* nil))
+        (let ((*read-eval* nil)
+              (*print-circle* t))
           ;; the value
-          (prin1 (wrap-foreign-objects value))
+          (prin1 (prepare-object value))
           (terpri)
           ;; the error code
           (if (not condition)

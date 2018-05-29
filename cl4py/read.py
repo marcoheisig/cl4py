@@ -33,6 +33,11 @@ class Stream:
             raise RuntimeError('Duplicate unread_char.')
 
 
+class Placeholder:
+    def __init__(self, label):
+        self.label = label
+
+
 SyntaxType = Enum('SyntaxType',
                   ['CONSTITUENT',
                    'TERMINATING_MACRO_CHARACTER',
@@ -47,16 +52,20 @@ class Readtable:
     def __init__(self, lisp):
         self.lisp = lisp
         self.macro_characters = {}
+        self.labels = {}
         self.set_macro_character('(', left_parenthesis)
         self.set_macro_character(')', right_parenthesis)
         self.set_macro_character("'", single_quote)
         self.set_macro_character('"', double_quote)
         self.set_macro_character('#', sharpsign)
         self.set_dispatch_macro_character('#', '\\', sharpsign_backslash)
+        self.set_dispatch_macro_character('#', "'", sharpsign_single_quote)
         self.set_dispatch_macro_character('#', '(', sharpsign_left_parenthesis)
         self.set_dispatch_macro_character('#', '?', sharpsign_questionmark)
         self.set_dispatch_macro_character('#', 'A', sharpsign_a)
         self.set_dispatch_macro_character('#', 'C', sharpsign_c)
+        self.set_dispatch_macro_character('#', '=', sharpsign_equal)
+        self.set_dispatch_macro_character('#', '#', sharpsign_sharpsign)
 
 
     def get_macro_character(self, char):
@@ -93,6 +102,29 @@ class Readtable:
     def read(self, stream, recursive=False):
         if not isinstance(stream, Stream):
             stream = Stream(stream)
+        value = self.read_aux(stream)
+        if not recursive:
+            value = self.remove_placeholders(value)
+            self.labels.clear()
+        return value
+
+
+    def remove_placeholders(self, value):
+        if isinstance(value, Placeholder):
+            return self.labels[value.label]
+        elif isinstance(value, Cons):
+            value.car = self.remove_placeholders(value.car)
+            value.cdr = self.remove_placeholders(value.cdr)
+            return value
+        elif isinstance(value, list):
+            for i in range(len(list)):
+                value[i] = self.remove_placeholders(value[i])
+            return value
+        else:
+            return value
+
+
+    def read_aux(self, stream):
         while True:
             # 1. read one character
             x = stream.read_char()
@@ -254,6 +286,10 @@ def sharpsign_backslash(r, s, c, n):
     return s.read_char()
 
 
+def sharpsign_single_quote(r, s, c, n):
+    return List('CL:FUNCTION', r.read(s, True))
+
+
 def sharpsign_left_parenthesis(r, s, c, n):
     return list(r.read_delimited_list(")", s, True))
 
@@ -271,6 +307,17 @@ def sharpsign_a(r, s, c, n):
     # TODO
     return
 
+
 def sharpsign_c(r, s, c, n):
-    (real, imag) =  list(r.read(s))
+    (real, imag) =  list(r.read(s, True))
     return complex(real, imag)
+
+
+def sharpsign_equal(r, s, c, n):
+    value = r.read(s, True)
+    r.labels[n] = value
+    return value
+
+
+def sharpsign_sharpsign(r, s, c, n):
+    return Placeholder(n)
