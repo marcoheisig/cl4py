@@ -8,9 +8,10 @@ Motivation
 ----------
 
 You are a Python programmer, but you want access to some of the powerful
-features of Lisp, for example to compile code at run time? Or you want
-to use some `awesome Lisp libraries <http://codys.club/awesome-cl/>`__?
-In that case, cl4py is here to help you.
+features of Lisp, for example to compile code at run time? Or you want to
+use some `awesome Lisp libraries <http://codys.club/awesome-cl/>`__? Or you
+are a Lisp programmer and want to show your work to your Python friends. In
+all these cases, cl4py is here to help you.
 
 Tutorial
 --------
