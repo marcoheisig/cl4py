@@ -54,25 +54,26 @@ class ListIterator:
         else:
             raise StopIteration
 
+
 class Cons:
-    visited = set()
+    repr_visits = set()
 
     def __init__(self, car, cdr):
         self.car = car
         self.cdr = cdr
 
     def __repr__(self):
-        initial_cons = not Cons.visited
-        if self in Cons.visited:
+        initial_cons = not Cons.repr_visits
+        if self in Cons.repr_visits:
             return "Cons(...)"
         body = ""
         datum = self
         while isinstance(datum, Cons):
-            if datum in Cons.visited:
+            if datum in Cons.repr_visits:
                 body += "..."
                 datum = None
             else:
-                Cons.visited |= {datum}
+                Cons.repr_visits |= {datum}
                 body += repr(datum.car)
                 datum = datum.cdr
                 if isinstance(datum, Cons):
@@ -82,11 +83,12 @@ class Cons:
         else:
             result = "DottedList(" + body + ", " + repr(datum) + ")"
         if initial_cons:
-            Cons.visited.clear()
+            Cons.repr_visits.clear()
         return result
 
     def __iter__(self):
         return ListIterator(self)
+
 
 class String:
     def __init__(self, data):
