@@ -68,8 +68,8 @@ class Cons:
            if isinstance(datum, Cons):
                content += ", "
        if datum != None:
-           return "cl4py.Cons(" + repr(self.car) + ", " + repr(self.cdr) + ")"
-       return "cl4py.List(" + content + ")"
+           return "Cons(" + repr(self.car) + ", " + repr(self.cdr) + ")"
+       return "List(" + content + ")"
 
    def __iter__(self):
        return ListIterator(self)
@@ -81,7 +81,7 @@ class String:
         self.data = data
 
     def __repr__(self):
-        return "cl4py.String(" + repr(self.data) + ")"
+        return "String(" + repr(self.data) + ")"
 
     def __str__(self):
         return str(self.data)
