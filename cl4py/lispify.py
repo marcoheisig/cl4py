@@ -1,5 +1,14 @@
 import io
+from fractions import Fraction
 from .data import *
+
+
+def lispify(lisp, obj):
+    return lispify_aux(lisp, obj)
+
+
+def lispify_aux(lisp, obj):
+    return lispifiers[type(obj)](lisp, obj)
 
 
 def lispify_str(l, x):
@@ -35,11 +44,7 @@ def lispify_Cons(l, x):
 def lispify_String(l, x):
     def escape(s):
         return s.translate(str.maketrans({'"':'\\"', '\\':'\\\\'}))
-    return '"' + escape(x.data) + '"'
-
-
-def lispify(lisp, obj):
-    return lispifiers[type(obj)](lisp, obj)
+    return '"' + escape(str(x)) + '"'
 
 
 lispifiers = {

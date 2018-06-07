@@ -47,17 +47,17 @@ notably, cons cells.
 .. code:: python
 
     >>> lisp.eval("(cons 1 2)")
-    cl4py.Cons(1, 2)
+    Cons(1, 2)
 
     >>> lst = lisp.eval("(cons 1 (cons 2 nil))")
-    cl4py.List(1, 2)
+    List(1, 2)
     >>> lst.car
     1
     >>> lst.cdr
-    cl4py.List(2) # an abbreviation for cl4py.Cons(2, None)
+    List(2) # an abbreviation for Cons(2, None)
 
     # conversion works vice versa, too:
-    >>> lisp.eval(cl4py.List('+', 2, 9))
+    >>> lisp.eval(List('+', 2, 9))
     11
 
 It soon becomes clumsy to look up individual Lisp functions by name.
@@ -71,14 +71,14 @@ modules, like this:
     True
 
     >>> cl.cons(5, None)
-    cl4py.List(5)
+    List(5)
 
     >>> cl.remove(5, [1, 5, 2, 7, 5, 9])
     [1, 2, 3, 4]
 
     # Higher-order functions work, too!
     >>> cl.mapcar(cl.constantly(4), Quote(1, 2, 3))
-    cl4py.List(4, 4, 4)
+    List(4, 4, 4)
 
 For convenience, Python strings are not treated as Lisp strings, but
 inserted literally into the evaluated Lisp code. This means that in
@@ -88,7 +88,7 @@ cl4py.String, like this:
 .. code:: python
 
     >>> lisp.eval(cl4py.String("foo"))
-    cl4py.String("foo")
+    String("foo")
 
 Related Projects
 ----------------

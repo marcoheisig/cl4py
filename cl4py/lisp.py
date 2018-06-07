@@ -36,7 +36,7 @@ class Lisp:
         err = self.readtable.read(self.stdout)
         if err:
             condition = err.car
-            msg = err.cdr.car.data if err.cdr else ""
+            msg = str(err.cdr.car) if err.cdr else ""
             def init(self):
                 RuntimeError.__init__(self, msg)
             raise type(condition, (RuntimeError,),
@@ -67,5 +67,5 @@ class Lisp:
 
         for cons in self.eval(query):
             if isinstance(cons.car, String):
-                setattr(module, pythonize(cons.car.data), cons.cdr)
+                setattr(module, pythonize(str(cons.car)), cons.cdr)
         return module

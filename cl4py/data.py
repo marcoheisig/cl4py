@@ -20,9 +20,7 @@ Correspondence of Python types and Lisp types in cl4py:
 | numpy.array        | <-> | array              |
 
 '''
-import re
-from fractions import Fraction
-
+import reprlib
 
 class LispObject:
     def __init__(self, lisp, handle):
@@ -56,35 +54,25 @@ class ListIterator:
 
 
 class Cons:
-    repr_visits = set()
-
     def __init__(self, car, cdr):
         self.car = car
         self.cdr = cdr
 
+    @reprlib.recursive_repr("...")
     def __repr__(self):
-        initial_cons = not Cons.repr_visits
-        if self in Cons.repr_visits:
-            return "Cons(...)"
-        body = ""
         datum = self
-        while isinstance(datum, Cons):
-            if datum in Cons.repr_visits:
-                body += "..."
-                datum = None
-            else:
-                Cons.repr_visits |= {datum}
-                body += repr(datum.car)
-                datum = datum.cdr
-                if isinstance(datum, Cons):
-                    body += ", "
-        if datum is None:
-            result = "List(" + body + ")"
+        car = datum.car
+        cdr = datum.cdr
+        rcar = repr(car)
+        rcdr = repr(cdr)
+        if cdr is None:
+            return "List(" + rcar + ")"
+        elif rcdr.startswith("DottedList("):
+            return "DottedList(" + rcar + ", " + rcdr[11:]
+        elif rcdr.startswith("List("):
+            return "List(" + rcar + ", " + rcdr[5:]
         else:
-            result = "DottedList(" + body + ", " + repr(datum) + ")"
-        if initial_cons:
-            Cons.repr_visits.clear()
-        return result
+            return "DottedList(" + rcar + ", " + rcdr + ")"
 
     def __iter__(self):
         return ListIterator(self)

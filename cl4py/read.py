@@ -1,4 +1,5 @@
 import re
+from fractions import Fraction
 from enum import Enum
 from .data import *
 
