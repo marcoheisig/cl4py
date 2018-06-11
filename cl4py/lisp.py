@@ -4,8 +4,8 @@ import importlib.machinery
 import importlib.util
 from pkg_resources import resource_filename
 from .data import *
-from .read import Readtable
-from .lispify import lispify
+from .reader import Readtable
+from .writer import lispify
 
 
 class Lisp:
@@ -31,7 +31,9 @@ class Lisp:
 
 
     def eval(self, expr):
-        self.stdin.write(lispify(self, expr) + '\n')
+        sexp = lispify(self, expr)
+        print(sexp)
+        self.stdin.write(sexp + '\n')
         val = self.readtable.read(self.stdout)
         err = self.readtable.read(self.stdout)
         if err:

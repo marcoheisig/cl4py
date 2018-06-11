@@ -2,6 +2,7 @@ import re
 from fractions import Fraction
 from enum import Enum
 from .data import *
+from .circularity import *
 
 # An implementation of the Common Lisp reader algorithm, with the following
 # simplifications and changes:
@@ -34,11 +35,6 @@ class Stream:
             raise RuntimeError('Duplicate unread_char.')
 
 
-class Placeholder:
-    def __init__(self, label):
-        self.label = label
-
-
 SyntaxType = Enum('SyntaxType',
                   ['CONSTITUENT',
                    'TERMINATING_MACRO_CHARACTER',
@@ -53,7 +49,6 @@ class Readtable:
     def __init__(self, lisp):
         self.lisp = lisp
         self.macro_characters = {}
-        self.labels = {}
         self.set_macro_character('(', left_parenthesis)
         self.set_macro_character(')', right_parenthesis)
         self.set_macro_character("'", single_quote)
@@ -104,25 +99,10 @@ class Readtable:
         if not isinstance(stream, Stream):
             stream = Stream(stream)
         value = self.read_aux(stream)
-        if not recursive:
-            value = self.remove_placeholders(value)
-            self.labels.clear()
-        return value
-
-
-    def remove_placeholders(self, value):
-        if isinstance(value, Placeholder):
-            return self.labels[value.label]
-        elif isinstance(value, Cons):
-            value.car = self.remove_placeholders(value.car)
-            value.cdr = self.remove_placeholders(value.cdr)
-            return value
-        elif isinstance(value, list):
-            for i in range(len(list)):
-                value[i] = self.remove_placeholders(value[i])
+        if recursive:
             return value
         else:
-            return value
+            return circularize(value)
 
 
     def read_aux(self, stream):
@@ -316,9 +296,8 @@ def sharpsign_c(r, s, c, n):
 
 def sharpsign_equal(r, s, c, n):
     value = r.read(s, True)
-    r.labels[n] = value
-    return value
+    return SharpsignEquals(n, value)
 
 
 def sharpsign_sharpsign(r, s, c, n):
-    return Placeholder(n)
+    return SharpsignSharpsign(n)

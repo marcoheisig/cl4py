@@ -1,10 +1,10 @@
 import io
 from fractions import Fraction
 from .data import *
-
+from .circularity import *
 
 def lispify(lisp, obj):
-    return lispify_aux(lisp, obj)
+    return lispify_aux(lisp, decircularize(obj))
 
 
 def lispify_aux(lisp, obj):
@@ -22,7 +22,7 @@ def lispify_str(l, x):
     if isinstance(value, str):
         return value
     else:
-        return lispify(l, value)
+        return lispify_aux(l, value)
 
 
 def lispify_LispObject(l, x):
@@ -32,12 +32,11 @@ def lispify_LispObject(l, x):
 def lispify_Cons(l, x):
     datum = x
     content = ""
-    # TODO handle circularity
     while isinstance(datum, Cons):
-        content += lispify(l, datum.car) + " "
+        content += lispify_aux(l, datum.car) + " "
         datum = datum.cdr
     if datum != None:
-        content += " . " + lispify(l, datum)
+        content += " . " + lispify_aux(l, datum)
     return "(" + content + ")"
 
 
@@ -52,13 +51,15 @@ lispifiers = {
     type(None) : lambda l, x: "NIL",
     int        : lambda l, x: str(x),
     float      : lambda l, x: str(x),
-    complex    : lambda l, x: "#C(" + lispify(l, x.real) + " " + lispify(l, x.imag) + ")",
-    list       : lambda l, x: "#(" + " ".join(lispify(l, elt) for elt in x) + ")",
-    tuple      : lambda l, x: lispify(l, List(*x)),
+    complex    : lambda l, x: "#C(" + lispify_aux(l, x.real) + " " + lispify_aux(l, x.imag) + ")",
+    list       : lambda l, x: "#(" + " ".join(lispify_aux(l, elt) for elt in x) + ")",
+    tuple      : lambda l, x: lispify_aux(l, List(*x)),
     # dict     : lambda x: TODO
     Fraction   : lambda l, x: str(x),
     str        : lispify_str,
     LispObject : lispify_LispObject,
     Cons       : lispify_Cons,
     String     : lispify_String,
+    SharpsignEquals : lambda l, x: "#" + str(x.label) + "=" + lispify_aux(l, x.obj),
+    SharpsignSharpsign : lambda l, x: "#" + str(x.label) + "#",
 }
