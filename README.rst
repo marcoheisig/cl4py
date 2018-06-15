@@ -8,10 +8,10 @@ Motivation
 ----------
 
 You are a Python programmer, but you want access to some of the powerful
-features of Lisp, for example to compile code at run time? Or you want to
-use some `awesome Lisp libraries <http://codys.club/awesome-cl/>`__? Or you
-are a Lisp programmer and want to show your work to your Python friends. In
-all these cases, cl4py is here to help you.
+features of Lisp, for example to compile code at run time?  Or you want to
+use some `awesome Lisp libraries <http://codys.club/awesome-cl/>`__?  Or
+you are a Lisp programmer and want to show your work to your Python
+friends.  In all these cases, cl4py is here to help you.
 
 Tutorial
 --------
@@ -24,9 +24,9 @@ You can start any number of Lisp subprocesses within Python, like this:
     >>> lisp = cl4py.Lisp()
 
 Of course, this requires you have some Lisp installed. If not, use
-something like ``apt install sbcl``, ``pacman -S sbcl`` or
-``brew install sbcl`` to correct this deficiency. Once you have a
-running Lisp process, you can execute Lisp code on it:
+something like ``apt install sbcl``, ``pacman -S sbcl`` or ``brew install
+sbcl`` to correct this deficiency.  Once you have a running Lisp process,
+you can execute Lisp code on it:
 
 .. code:: python
 
@@ -42,7 +42,8 @@ running Lisp process, you can execute Lisp code on it:
     Fraction(1, 2)
 
 Some Lisp data structures have no direct equivalent in Python, most
-notably, cons cells.
+notably, cons cells.  The cl4py module provides a suitable Cons class and
+converts List conses to instances of cl4py.Cons.
 
 .. code:: python
 
@@ -60,9 +61,14 @@ notably, cons cells.
     >>> lisp.eval(cl4py.List('+', 2, 9))
     11
 
+    # cl4py Conses are iterable, too!
+    >>> list(lst)
+    [1, 2]
+    >>> sum(lst)
+    3
 
-For further convenience, cl4py will implicitly convert Python tuples to
-Lisp lists and interpret Python strings as Lisp tokens.
+For convenience, cl4py will implicitly convert Python tuples to Lisp lists
+and interpret Python strings as Lisp tokens.
 
 .. code:: python
 
@@ -75,8 +81,8 @@ Lisp lists and interpret Python strings as Lisp tokens.
     >>> lisp.eval("(cdddr #1=(1 . #1#))")
     DottedList(1, ...)
 
-It soon becomes clumsy to look up individual Lisp functions by name.
-Instead, it is possible to convert entire Lisp packages to Python
+It soon becomes clumsy to use eval to look up individual Lisp functions by
+name.  Instead, it is possible to convert entire Lisp packages to Python
 modules, like this:
 
 .. code:: python
@@ -101,9 +107,9 @@ modules, like this:
     >>> cl.mapcar('+', (1, 2, 3, 4), twos)
     List(3, 4, 5, 6)
 
-Python strings are not treated as Lisp strings, but read in as Lisp
-tokens. This means that in order to actually send a string to Lisp, it must
-be wrapped into a cl4py.String, like this:
+Python strings are not treated as Lisp strings, but read in as Lisp tokens.
+This means that in order to actually send a string to Lisp, it must be
+wrapped into a cl4py.String, like this:
 
 .. code:: python
 
