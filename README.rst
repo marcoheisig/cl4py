@@ -57,8 +57,23 @@ notably, cons cells.
     List(2) # an abbreviation for Cons(2, None)
 
     # conversion works vice versa, too:
-    >>> lisp.eval(List('+', 2, 9))
+    >>> lisp.eval(cl4py.List('+', 2, 9))
     11
+
+
+For further convenience, cl4py will implicitly convert Python tuples to
+Lisp lists and interpret Python strings as Lisp tokens.
+
+.. code:: python
+
+    >>> lisp.eval(('+', 2, 3))
+    5
+
+    >>> lst = lisp.eval(("loop", "repeat", 3, collect, 5))
+    List(5, 5, 5)
+
+    >>> lisp.eval("(cdddr #1=(1 . #1#))")
+    DottedList(1, ...)
 
 It soon becomes clumsy to look up individual Lisp functions by name.
 Instead, it is possible to convert entire Lisp packages to Python
@@ -77,13 +92,18 @@ modules, like this:
     [1, 2, 3, 4]
 
     # Higher-order functions work, too!
-    >>> cl.mapcar(cl.constantly(4), Quote(1, 2, 3))
+    >>> cl.mapcar(cl.constantly(4), (1, 2, 3))
     List(4, 4, 4)
 
-For convenience, Python strings are not treated as Lisp strings, but
-inserted literally into the evaluated Lisp code. This means that in
-order to actually send a string to Lisp, it must be wrapped into a
-cl4py.String, like this:
+    # Of course, circular objects of all kinds are supported.
+    >>> twos = cl.cons(2,2)
+    >>> twos.cdr = twos
+    >>> cl.mapcar('+', (1, 2, 3, 4), twos)
+    List(3, 4, 5, 6)
+
+Python strings are not treated as Lisp strings, but read in as Lisp
+tokens. This means that in order to actually send a string to Lisp, it must
+be wrapped into a cl4py.String, like this:
 
 .. code:: python
 

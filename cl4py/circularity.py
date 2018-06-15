@@ -1,4 +1,6 @@
+import io
 from .data import *
+
 
 class SharpsignSharpsign:
     def __init__(self, label):
@@ -10,15 +12,31 @@ class SharpsignEquals:
         self.label = label
         self.obj = obj
 
-def decircularize(obj):
+
+def decircularize(obj, readtable):
     """Return a structure that is similar to OBJ, but where each circularity
 has been replaced by appropriate SharpsignEquals and SharpsignSharpsign
 instances.
     """
+    # Utility: Interpret strings as Lisp tokens.
+    str_tokens = {}
+    def scan_str(s):
+        stream = io.StringIO(s)
+        token = readtable.read(stream)
+        try:
+            readtable.read(stream)
+            raise RuntimeError('The string "' + s + '" contains more than one token.')
+        except EOFError:
+            pass
+        str_tokens[s] = token
+        if not isinstance(token, str):
+            scan(token)
     # Phase 1: Scan the data and number all circular objects.
     table = {}
     n = 1
     def scan(obj):
+        if isinstance(obj, str):
+            scan_str(obj)
         nonlocal n
         atom = not (isinstance(obj, Cons) or
                     isinstance(obj, list) or
@@ -71,6 +89,8 @@ instances.
                 result = {}
                 for key, val in obj.items():
                     result[copy(key)] = copy(val)
+            elif isinstance(obj, str):
+                return str_tokens[obj]
             if n > 0:
                 return SharpsignEquals(n, result)
             else:
