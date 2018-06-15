@@ -11,6 +11,10 @@ class SharpsignEquals:
         self.obj = obj
 
 def decircularize(obj):
+    """Return a structure that is similar to OBJ, but where each circularity
+has been replaced by appropriate SharpsignEquals and SharpsignSharpsign
+instances.
+    """
     # Phase 1: Scan the data and number all circular objects.
     table = {}
     n = 1
@@ -75,6 +79,9 @@ def decircularize(obj):
 
 
 def circularize(obj):
+    """Modify and return OBJ, such that each instance of SharpsignEquals or
+    SharpsignSharpsign is replaced by the corresponding object.
+    """
     table = {}
     def copy(obj):
         if isinstance(obj, SharpsignEquals):
