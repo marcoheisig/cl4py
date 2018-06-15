@@ -14,7 +14,7 @@ def readme():
 
 setup(
     name='cl4py',
-    version='1.3.1',
+    version='1.3.2',
     description='Common Lisp for Python',
     long_description=readme(),
     license='MIT',
