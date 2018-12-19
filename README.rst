@@ -116,6 +116,24 @@ wrapped into a cl4py.String, like this:
     >>> lisp.eval(cl4py.String("foo"))
     String("foo")
 
+Frequently Asked Problems
+-------------------------
+
+Why does my Lisp subprocess complain about ``Package QL does not exist``.
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, cl4py starts a Lisp subprocess with ``sbcl --script``.  This
+means, that the Lisp process will ignore any user initialization files,
+including the Quicklisp setup.
+
+One possible solution is to explicitly load Quicklisp from cl4py:
+
+.. code:: python
+
+    >>> lisp = cl4py.Lisp()
+    >>> lisp.eval('(load "~/quicklisp/setup.lisp")')
+
+
 Related Projects
 ----------------
 
