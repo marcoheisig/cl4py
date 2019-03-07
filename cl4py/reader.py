@@ -12,8 +12,9 @@ from .circularity import *
 # 3. READTABLE-CASE is always :UPCASE.
 # 4. *READ-EVAL* is always false.
 # 5. *READ-BASE* is always 10.
-# 6. There are no invalid characters.
-# 7. The input is assumed to be well formed.
+# 6. *READ-DEFAULT-FORMAT* is always 'double-float.
+# 7. There are no invalid characters.
+# 8. The input is assumed to be well formed.
 
 class Stream:
     def __init__(self, textstream):
@@ -272,7 +273,11 @@ def sharpsign_single_quote(r, s, c, n):
 
 
 def sharpsign_left_parenthesis(r, s, c, n):
-    return list(r.read_delimited_list(")", s, True))
+    l = r.read_delimited_list(")", s, True)
+    if not l:
+        return []
+    else:
+        return list(l)
 
 
 def sharpsign_questionmark(r, s, c, n):

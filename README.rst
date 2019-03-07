@@ -30,14 +30,14 @@ you can execute Lisp code on it:
 
 .. code:: python
 
-    >>> lisp.eval("(+ 2 3)")
+    >>> lisp.eval(cl4py.List('+', 2, 3))
     5
 
-    >>> add = lisp.eval("(function +)")
+    >>> add = lisp.eval(cl4py.Function('+'))
     >>> add(1, 2, 3, 4)
     10
 
-    >>> div = lisp.eval("(function /)")
+    >>> div = lisp.eval(cl4py.Function('/'))
     >>> div(2, 4)
     Fraction(1, 2)
 
@@ -47,43 +47,25 @@ converts List conses to instances of cl4py.Cons.
 
 .. code:: python
 
-    >>> lisp.eval("(cons 1 2)")
+    >>> lisp.eval(List('CONS', 1, 2))
     Cons(1, 2)
 
-    >>> lst = lisp.eval("(cons 1 (cons 2 nil))")
+    >>> lst = lisp.eval(List('CONS', 1, List('CONS', 2, None)))
     List(1, 2)
     >>> lst.car
     1
     >>> lst.cdr
-    List(2) # an abbreviation for Cons(2, None)
+    List(2) # an abbreviation for Cons(2, False)
 
-    # conversion works vice versa, too:
-    >>> lisp.eval(cl4py.List('+', 2, 9))
-    11
-
-    # cl4py Conses are iterable, too!
+    # cl4py Conses are iterable!
     >>> list(lst)
     [1, 2]
     >>> sum(lst)
     3
 
-For convenience, cl4py will implicitly convert Python tuples to Lisp lists
-and interpret Python strings as Lisp tokens.
-
-.. code:: python
-
-    >>> lisp.eval(('+', 2, 3))
-    5
-
-    >>> lst = lisp.eval(("loop", "repeat", 3, collect, 5))
-    List(5, 5, 5)
-
-    >>> lisp.eval("(cdddr #1=(1 . #1#))")
-    DottedList(1, ...)
-
 It soon becomes clumsy to use eval to look up individual Lisp functions by
-name.  Instead, it is possible to convert entire Lisp packages to Python
-modules, like this:
+name.  Instead, it is usually better to convert entire Lisp packages to
+Python modules, like this:
 
 .. code:: python
 
@@ -107,9 +89,9 @@ modules, like this:
     >>> cl.mapcar('+', (1, 2, 3, 4), twos)
     List(3, 4, 5, 6)
 
-Python strings are not treated as Lisp strings, but read in as Lisp tokens.
-This means that in order to actually send a string to Lisp, it must be
-wrapped into a cl4py.String, like this:
+Python strings are not treated as Lisp strings, but read in as Lisp
+symbols.  This means that in order to actually send a string to Lisp, it
+must be wrapped into a cl4py.String, like this:
 
 .. code:: python
 
@@ -130,8 +112,8 @@ One possible solution is to explicitly load Quicklisp from cl4py:
 
 .. code:: python
 
-    >>> lisp = cl4py.Lisp()
-    >>> lisp.eval('(load "~/quicklisp/setup.lisp")')
+    >>> lisp = cl4py.Lisp(); cl = find_package('CL')
+    >>> cl.load(cl4py.String("~/quicklisp/setup.lisp"))
 
 
 Related Projects

@@ -1,23 +1,23 @@
 '''
 Correspondence of Python types and Lisp types in cl4py:
 
-| Python             |     | Lisp               |
-|--------------------+-----+--------------------|
-| True, False        | <-> | T, NIL             |
-| None               | --> | NIL                |
-| int                | <-> | integer            |
-| float              | <-> | double-float       |
-| float              | <-- | single-float       |
-| complex            | <-> | (complex *)        |
-| string             | <-> | inserted literally |
-| list               | <-> | simple-vector      |
-| tuple              | --> | list               |
-| dict               | <-> | hash-table         |
-| cl4py.Cons         | <-> | cons               |
-| cl4py.String       | <-> | string             |
-| cl4py.LispObject   | <-> | #N? handle         |
-| fractions.Fraction | <-> | ratio              |
-| numpy.array        | <-> | array              |
+| Python             |     | Lisp          |
+|--------------------+-----+---------------|
+| True, False        | <-> | T, NIL        |
+| None               | --> | NIL           |
+| int                | <-> | integer       |
+| float              | <-> | double-float  |
+| float              | <-- | single-float  |
+| complex            | <-> | (complex *)   |
+| string             | <-> | symbol        |
+| list               | <-> | simple-vector |
+| tuple              | --> | list          |
+| dict               | <-> | hash-table    |
+| cl4py.Cons         | <-> | cons          |
+| cl4py.String       | <-> | string        |
+| cl4py.LispObject   | <-> | #N? handle    |
+| fractions.Fraction | <-> | ratio         |
+| numpy.array        | <-> | array         |
 
 '''
 import reprlib
@@ -107,3 +107,7 @@ def DottedList(*args):
 
 def Quote(arg):
     return List('CL:QUOTE', arg)
+
+
+def Function(arg):
+    return List('CL:FUNCTION', arg)

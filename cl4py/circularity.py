@@ -56,39 +56,25 @@ def decircularize(obj, readtable):
 has been replaced by appropriate SharpsignEquals and SharpsignSharpsign
 instances.
     """
-    # Utility: Interpret strings as Lisp tokens.
-    str_tokens = {}
-    def scan_str(s):
-        stream = io.StringIO(s)
-        token = readtable.read(stream)
-        try:
-            readtable.read(stream)
-            raise RuntimeError('The string "' + s + '" contains more than one token.')
-        except EOFError:
-            pass
-        if not isinstance(token, str):
-            str_tokens[s] = token
-            scan(token)
     # Phase 1: Scan the data and number all circular objects.
     table = {}
     n = 1
     def scan(obj):
-        if isinstance(obj, str):
-            scan_str(obj)
-            return
         nonlocal n
         atom = not (isinstance(obj, Cons) or
                     isinstance(obj, list) or
                     isinstance(obj, tuple) or
                     isinstance(obj, dict))
-        if atom: return
-        if obj in table:
-            if table[obj] is 0:
-                table[obj] = n
+        if atom:
+            return
+        key = id(obj)
+        if key in table:
+            if table[key] is 0:
+                table[key] = n
                 n += 1
             return
         else:
-            table[obj] = 0
+            table[key] = 0
         if isinstance(obj, Cons):
             scan(obj.car)
             scan(obj.cdr)
@@ -106,10 +92,11 @@ instances.
     # Phase 2: Create a copy of data, where all references have been
     # replaced by SharpsignEquals or SharpsignSharpsign objects.
     def copy(obj):
+        key = id(obj)
         # No need to copy atoms.
-        if not obj in table:
+        if not key in table:
             return obj
-        n = table[obj]
+        n = table[key]
         if n < 0:
             # We have a circular reference.  We use the sign of the
             # object's number to distinguish the first visit from
@@ -117,22 +104,17 @@ instances.
             return SharpsignSharpsign(abs(n))
         else:
             if n > 0:
-                table[obj] = -table[obj]
+                table[key] = -table[key]
             if isinstance(obj, Cons):
                 result = Cons(copy(obj.car), copy(obj.cdr))
             elif isinstance(obj, list):
                 result = list(copy(elt) for elt in obj)
             elif isinstance(obj, tuple):
-                result = List(*(copy(elt) for elt in obj))
+                result = list((copy(elt) for elt in obj))
             elif isinstance(obj, dict):
                 result = {}
                 for key, val in obj.items():
                     result[copy(key)] = copy(val)
-            elif isinstance(obj, str):
-                if obj in str_tokens:
-                    return copy(str_tokens[obj])
-                else:
-                    return obj
             if n > 0:
                 return SharpsignEquals(n, result)
             else:

@@ -1,13 +1,28 @@
+import re
 from fractions import Fraction
 from .data import *
 from .circularity import *
 
 def lispify(lisp, obj):
-    return lispify_aux(decircularize(obj, lisp.readtable))
+    return lispify_datum(decircularize(obj, lisp.readtable))
 
 
-def lispify_aux(obj):
+def lispify_datum(obj):
     return lispifiers[type(obj)](obj)
+
+
+def lispify_dict(d):
+    raise RuntimeError('Not yet implemented, sorry.')
+
+symbol_regex = re.compile(r"([^:]+:)?:?([^:]+)")
+
+
+def lispify_str(s):
+    m = re.fullmatch(symbol_regex, s)
+    if m:
+        return s
+    else:
+        raise RuntimeError('Not a symbol: ' + s + '.')
 
 
 def lispify_LispObject(x):
@@ -18,10 +33,10 @@ def lispify_Cons(x):
     datum = x
     content = ""
     while isinstance(datum, Cons):
-        content += lispify_aux(datum.car) + " "
+        content += lispify_datum(datum.car) + " "
         datum = datum.cdr
     if datum != None:
-        content += " . " + lispify_aux(datum)
+        content += " . " + lispify_datum(datum)
     return "(" + content + ")"
 
 
@@ -36,15 +51,15 @@ lispifiers = {
     type(None) : lambda x: "NIL",
     int        : lambda x: str(x),
     float      : lambda x: str(x),
-    complex    : lambda x: "#C(" + lispify_aux(x.real) + " " + lispify_aux(x.imag) + ")",
-    list       : lambda x: "#(" + " ".join(lispify_aux(elt) for elt in x) + ")",
-    tuple      : lambda x: lispify_aux(List(*x)),
-    # dict     : lambda x: TODO
+    complex    : lambda x: "#C(" + lispify_datum(x.real) + " " + lispify_datum(x.imag) + ")",
+    list       : lambda x: "#(" + " ".join(lispify_datum(elt) for elt in x) + ")",
+    tuple      : lambda x: "#(" + " ".join(lispify_datum(elt) for elt in x) + ")",
     Fraction   : lambda x: str(x),
-    str        : lambda x: x,
+    str        : lispify_str,
+    dict       : lispify_dict,
     LispObject : lispify_LispObject,
     Cons       : lispify_Cons,
     String     : lispify_String,
-    SharpsignEquals : lambda x: "#" + str(x.label) + "=" + lispify_aux(x.obj),
+    SharpsignEquals : lambda x: "#" + str(x.label) + "=" + lispify_datum(x.obj),
     SharpsignSharpsign : lambda x: "#" + str(x.label) + "#",
 }

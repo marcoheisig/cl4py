@@ -46,19 +46,19 @@ class Lisp:
 
 
     def load(self, file):
-        return self.eval(('CL:LOAD', String(file)))
+        return self.eval(List('CL:LOAD', String(file)))
 
 
     def find_package(self, name):
         spec = importlib.machinery.ModuleSpec(name, None)
         module = importlib.util.module_from_spec(spec)
-        query = ('loop', 'for', 'symbol', 'being', 'each', 'external-symbol', 'of', String(name),
-                 'when', ('fboundp', 'symbol'),
-                 'unless', ('special-operator-p', 'symbol'),
-                 'unless', ('macro-function', 'symbol'),
-                 'collect', ('Cons',
-                             ('symbol-name', 'symbol'),
-                             ('symbol-function', 'symbol')))
+        query = List('loop', 'for', 'symbol', 'being', 'each', 'external-symbol', 'of', String(name),
+                     'when', List('fboundp', 'symbol'),
+                     'unless', List('special-operator-p', 'symbol'),
+                     'unless', List('macro-function', 'symbol'),
+                     'collect', List('Cons',
+                                     List('symbol-name', 'symbol'),
+                                     List('symbol-function', 'symbol')))
 
         def pythonize(name):
             name = name.replace('-', '_')
