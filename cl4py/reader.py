@@ -25,6 +25,7 @@ class Stream:
         if self.new == None:
             c = self.stream.read(1)
             if eof_error and not c: raise EOFError()
+            print(c, end='')
         else:
             c = self.new
         self.old, self.new = c, None

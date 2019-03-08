@@ -110,7 +110,7 @@
 (defmethod pyprint-scan :around ((object t))
   (unless (or (integerp object)
               (characterp object)
-              (consp object))
+              (symbolp object))
     (multiple-value-bind (value present-p)
         (gethash object *pyprint-table*)
       (cond ((not present-p)
@@ -139,6 +139,7 @@
    hash-table))
 
 (defmethod pyprint-write :around ((object t) stream)
+  (break)
   (let ((id (gethash object *pyprint-table*)))
     (if (integerp id)
         (cond ((plusp id)
@@ -171,11 +172,13 @@
           (write-string " " stream)
           (cond ((null cdr)
                  (loop-finish))
-                ((atom cdr)
+                ((or (atom cdr)
+                     (integerp (gethash cdr *pyprint-table*)))
                  (write-string " . " stream)
                  (pyprint-write cdr stream)
                  (loop-finish))
-                (t (setf cons cdr))))
+                (t
+                 (setf cons cdr))))
   (write-string ")" stream))
 
 (defmethod pyprint-write ((simple-vector simple-vector) stream)
@@ -238,4 +241,4 @@
           (terpri)
           (finish-output))))))
 
-(cl4py)
+;(cl4py)

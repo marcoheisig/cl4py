@@ -54,7 +54,7 @@ def lispify_Symbol(x):
 
 
 lispifiers = {
-    bool       : lambda x: "T" if x else (),
+    bool       : lambda x: "T" if x else "NIL",
     type(None) : lambda x: "NIL",
     int        : lambda x: str(x),
     float      : lambda x: str(x),

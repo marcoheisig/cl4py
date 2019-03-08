@@ -6,11 +6,17 @@ class SharpsignSharpsign:
     def __init__(self, label):
         self.label = label
 
+    def __repr__(self):
+        return "#{}#".format(self.label)
+
 
 class SharpsignEquals:
     def __init__(self, label, obj):
         self.label = label
         self.obj = obj
+
+    def __repr__(self):
+        return "#{}={}".format(self.label, self.obj)
 
 
 def circularize(obj):
@@ -63,7 +69,7 @@ instances.
         nonlocal n
         atom = not (isinstance(obj, Cons) or
                     isinstance(obj, list) or
-                    isinstance(obj, tuple) or
+                    (isinstance(obj, tuple) and len(obj) > 0) or
                     isinstance(obj, dict))
         if atom:
             return
