@@ -32,33 +32,34 @@ class Lisp:
 
     def eval(self, expr):
         sexp = lispify(self, expr)
+        print(sexp)
         self.stdin.write(sexp + '\n')
         val = self.readtable.read(self.stdout)
         err = self.readtable.read(self.stdout)
-        if err:
-            condition = err.car
-            msg = str(err.cdr.car) if err.cdr else ""
+        if isinstance(err, Cons):
+            condition = car(err)
+            msg = car(cdr(err)) if cdr(err) else ""
             def init(self):
                 RuntimeError.__init__(self, msg)
-            raise type(condition, (RuntimeError,),
+            raise type(str(condition), (RuntimeError,),
                        {'__init__': init})()
         return val
 
 
     def load(self, file):
-        return self.eval(List('CL:LOAD', String(file)))
+        return self.eval(List(Symbol('LOAD', 'CL'), Quote(file)))
 
 
     def find_package(self, name):
         spec = importlib.machinery.ModuleSpec(name, None)
         module = importlib.util.module_from_spec(spec)
-        query = List('loop', 'for', 'symbol', 'being', 'each', 'external-symbol', 'of', String(name),
-                     'when', List('fboundp', 'symbol'),
-                     'unless', List('special-operator-p', 'symbol'),
-                     'unless', List('macro-function', 'symbol'),
-                     'collect', List('Cons',
-                                     List('symbol-name', 'symbol'),
-                                     List('symbol-function', 'symbol')))
+        query = ('loop', 'for', 'symbol', 'being', 'each', 'external-symbol', 'of', Quote(name),
+                 'when', ('fboundp', 'symbol'),
+                 'unless', ('special-operator-p', 'symbol'),
+                 'unless', ('macro-function', 'symbol'),
+                 'collect', ('Cons',
+                             ('symbol-name', 'symbol'),
+                             ('symbol-function', 'symbol')))
 
         def pythonize(name):
             name = name.replace('-', '_')
@@ -67,6 +68,6 @@ class Lisp:
             return name
 
         for cons in self.eval(query):
-            if isinstance(cons.car, String):
-                setattr(module, pythonize(str(cons.car)), cons.cdr)
+            if isinstance(cons.car, str):
+                setattr(module, pythonize(cons.car), cons.cdr)
         return module

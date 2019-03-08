@@ -110,7 +110,12 @@ instances.
             elif isinstance(obj, list):
                 result = list(copy(elt) for elt in obj)
             elif isinstance(obj, tuple):
-                result = list((copy(elt) for elt in obj))
+                # Convert strings to List data to make tuples a shorthand
+                # notation for Lisp data.
+                result = List(*(parse_str(elt, readtable)
+                                if isinstance(elt, str)
+                                else copy(elt)
+                                for elt in obj))
             elif isinstance(obj, dict):
                 result = {}
                 for key, val in obj.items():
@@ -121,3 +126,13 @@ instances.
                 return result
     return copy(obj)
 
+
+def parse_str(string, readtable):
+    stream = io.StringIO(string)
+    token = readtable.read(stream)
+    try:
+        readtable.read(stream)
+        raise RuntimeError('The string "' + string + '" contains more than one token.')
+    except EOFError:
+        pass
+    return token

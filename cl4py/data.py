@@ -1,62 +1,54 @@
 '''
 Correspondence of Python types and Lisp types in cl4py:
 
-| Python             |     | Lisp          |
-|--------------------+-----+---------------|
-| True, False        | <-> | T, NIL        |
-| None               | --> | NIL           |
-| int                | <-> | integer       |
-| float              | <-> | double-float  |
-| float              | <-- | single-float  |
-| complex            | <-> | (complex *)   |
-| string             | <-> | symbol        |
-| list               | <-> | simple-vector |
-| tuple              | --> | list          |
-| dict               | <-> | hash-table    |
-| cl4py.Cons         | <-> | cons          |
-| cl4py.String       | <-> | string        |
-| cl4py.LispObject   | <-> | #N? handle    |
-| fractions.Fraction | <-> | ratio         |
-| numpy.array        | <-> | array         |
+| Python                  |     | Lisp                                 |
+|-------------------------+-----+--------------------------------------|
+| True, False             | <-> | T, NIL                               |
+| None                    | --> | NIL                                  |
+| int                     | <-> | integer                              |
+| float                   | <-> | double-float                         |
+| float                   | <-- | single-float                         |
+| complex                 | <-> | (complex *)                          |
+| string                  | <-> | symbol                               |
+| list                    | <-> | simple-vector                        |
+| tuple                   | --> | list (+ string to symbol conversion) |
+| dict                    | <-> | hash-table                           |
+| str                     | <-> | string                               |
+| cl4py.Cons              | <-> | cons                                 |
+| cl4py.Symbol            | <-> | symbol                               |
+| cl4py.UnknownLispObject | <-> | #N? handle                           |
+| fractions.Fraction      | <-> | ratio                                |
+| numpy.array             | <-> | array                                |
 
 '''
 import reprlib
 
 class LispObject:
-    def __init__(self, lisp, handle):
-        self.lisp = lisp
-        self.handle = handle
-
-    def __del__(self):
-        try:
-            self.lisp.eval('#{}!'.format(self.handle))
-        except:
-            pass
-
-    def __call__(self, *args):
-        return self.lisp.eval(List('CL:FUNCALL', self, *[Quote(arg) for arg in args]))
+    pass
 
 
-class ListIterator:
-    def __init__(self, elt):
-        self.elt = elt
+class Symbol(LispObject):
+    def __init__(self, name, package=None):
+        self.name = name
+        self.package = package
 
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if isinstance(self.elt, Cons):
-            value = self.elt.car
-            self.elt = self.elt.cdr
-            return value
+    def __repr__(self):
+        if self.package:
+            return 'Symbol("{}", "{}")'.format(self.name, self.package)
         else:
-            raise StopIteration
+            return 'Symbol("{}", None)'.format(self.name)
 
 
-class Cons:
+class Cons (LispObject):
     def __init__(self, car, cdr):
         self.car = car
         self.cdr = cdr
+
+    def __len__(self):
+        counter = 0
+        for x in self:
+            counter += 1
+        return counter
 
     @reprlib.recursive_repr("...")
     def __repr__(self):
@@ -78,17 +70,35 @@ class Cons:
         return ListIterator(self)
 
 
-class String:
-    def __init__(self, data):
-        if not isinstance(data, str):
-            raise RuntimeError("Not a string: " + str(data))
-        self.data = data
+class UnknownLispObject (LispObject):
+    def __init__(self, lisp, handle):
+        self.lisp = lisp
+        self.handle = handle
 
-    def __repr__(self):
-        return "String(" + repr(self.data) + ")"
+    def __del__(self):
+        try:
+            self.lisp.eval('#{}!'.format(self.handle))
+        except:
+            pass
 
-    def __str__(self):
-        return str(self.data)
+    def __call__(self, *args):
+        return self.lisp.eval(List(Symbol('FUNCALL', 'CL'), self, *[Quote(arg) for arg in args]))
+
+
+class ListIterator:
+    def __init__(self, elt):
+        self.elt = elt
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if isinstance(self.elt, Cons):
+            value = self.elt.car
+            self.elt = self.elt.cdr
+            return value
+        else:
+            raise StopIteration
 
 
 def List(*args):
@@ -106,8 +116,26 @@ def DottedList(*args):
 
 
 def Quote(arg):
-    return List('CL:QUOTE', arg)
+    return List(Symbol('QUOTE', 'CL'), arg)
 
 
 def Function(arg):
-    return List('CL:FUNCTION', arg)
+    return List(Symbol('FUNCTION', 'CL'), arg)
+
+
+def car(arg):
+    if isinstance(arg, Cons):
+        return arg.car
+    elif not arg:
+        return None
+    else:
+        raise RuntimeError('Cannot take the CAR of ' + str(arg) + '.')
+
+
+def cdr(arg):
+    if isinstance(arg, Cons):
+        return arg.cdr
+    elif not arg:
+        return None
+    else:
+        raise RuntimeError('Cannot take the CDR of ' + str(arg) + '.')

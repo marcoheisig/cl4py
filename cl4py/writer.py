@@ -12,20 +12,21 @@ def lispify_datum(obj):
 
 
 def lispify_dict(d):
-    raise RuntimeError('Not yet implemented, sorry.')
+    s = "{"
+    for key, value in d.items():
+        s += lispify_datum(key) + " " + lispify_datum(value)
+    return s + "}"
 
 symbol_regex = re.compile(r"([^:]+:)?:?([^:]+)")
 
 
 def lispify_str(s):
-    m = re.fullmatch(symbol_regex, s)
-    if m:
-        return s
-    else:
-        raise RuntimeError('Not a symbol: ' + s + '.')
+    def escape(s):
+        return s.translate(str.maketrans({'"':'\\"', '\\':'\\\\'}))
+    return '"' + escape(s) + '"'
 
 
-def lispify_LispObject(x):
+def lispify_UnknownLispObject(x):
     return "#{}?".format(x.handle)
 
 
@@ -40,10 +41,11 @@ def lispify_Cons(x):
     return "(" + content + ")"
 
 
-def lispify_String(x):
-    def escape(s):
-        return s.translate(str.maketrans({'"':'\\"', '\\':'\\\\'}))
-    return '"' + escape(str(x)) + '"'
+def lispify_Symbol(x):
+    if not x.package:
+        return "|" + x.name + "|"
+    else:
+        return "|" + x.package + "|::|" + x.name + "|"
 
 
 lispifiers = {
@@ -53,13 +55,12 @@ lispifiers = {
     float      : lambda x: str(x),
     complex    : lambda x: "#C(" + lispify_datum(x.real) + " " + lispify_datum(x.imag) + ")",
     list       : lambda x: "#(" + " ".join(lispify_datum(elt) for elt in x) + ")",
-    tuple      : lambda x: "#(" + " ".join(lispify_datum(elt) for elt in x) + ")",
     Fraction   : lambda x: str(x),
     str        : lispify_str,
     dict       : lispify_dict,
-    LispObject : lispify_LispObject,
     Cons       : lispify_Cons,
-    String     : lispify_String,
+    Symbol     : lispify_Symbol,
     SharpsignEquals : lambda x: "#" + str(x.label) + "=" + lispify_datum(x.obj),
     SharpsignSharpsign : lambda x: "#" + str(x.label) + "#",
+    UnknownLispObject : lispify_UnknownLispObject,
 }

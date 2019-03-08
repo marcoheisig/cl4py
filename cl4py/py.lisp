@@ -7,6 +7,10 @@
 ;;; Welcome to the Lisp side of cl4py. Basically, this is just a REPL that
 ;;; reads expressions from the Python side and prints results back to
 ;;; Python.
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Object Handles
 ;;;
 ;;; One challenge is that not all objects in Lisp can be written
 ;;; readably. As a pragmatic workaround, these objects are replaced by
@@ -17,100 +21,180 @@
 
 (defvar *foreign-objects* (make-hash-table :test #'eql))
 
-(defun handle-free (handle)
-  (remhash handle *foreign-objects*)
-  (values))
+(defun free-handle (handle)
+  (remhash handle *foreign-objects*))
 
 (defun handle-object (handle)
   (or (gethash handle *foreign-objects*)
       (error "Invalid Handle.")))
 
-(defun (setf handle-object) (value handle)
-  (setf (gethash handle *foreign-objects*) value))
-
-(defstruct handle-wrapper (handle nil))
-
-(defmethod print-object ((object handle-wrapper) stream)
-  (write-char #\# stream)
-  (prin1 (handle-wrapper-handle object) stream)
-  (write-char #\? stream))
-
-(defun wrap-foreign-object (object)
+(defun object-handle (object)
   (let ((handle (incf *handle-counter*)))
-    (setf (handle-object handle) object)
-    (make-handle-wrapper :handle handle)))
+    (setf (gethash handle *foreign-objects*) object)
+    handle))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; Reader Macros
 
 (defun sharpsign-exclamation-mark (s c n)
   (declare (ignore s c))
-  (handle-free n))
+  (free-handle n)
+  (values))
 
-(defun sharpsign-questionmark (s c n)
+(defun sharpsign-question-mark (s c n)
   (declare (ignore s c))
   (handle-object n))
 
+(defun left-curly-bracket (stream char)
+  (declare (ignore char))
+  (let ((items (read-delimited-list #\} stream t))
+        (table (make-hash-table :test #'equal)))
+    (loop for (key value) on items by #'cddr do
+      (setf (gethash key table) value))
+    table))
+
+(define-condition unmatched-closing-curly-bracket
+    (reader-error)
+  ()
+  (:report
+   (lambda (condition stream)
+     (format stream "Unmatched closing curly bracket on ~S."
+             (stream-error-stream condition)))))
+
+(defun right-curly-bracket (stream char)
+  (declare (ignore char))
+  (error 'unmatched-closing-curly-bracket
+         :stream stream))
+
 (defvar *cl4py-readtable*
   (let ((r (copy-readtable)))
-    (set-dispatch-macro-character #\# #\! #'sharpsign-exclamation-mark r)
-    (set-dispatch-macro-character #\# #\? #'sharpsign-questionmark r)
+    (set-dispatch-macro-character #\# #\! 'sharpsign-exclamation-mark r)
+    (set-dispatch-macro-character #\# #\? 'sharpsign-question-mark r)
+    (set-macro-character #\{ 'left-curly-bracket nil r)
+    (set-macro-character #\} 'right-curly-bracket nil r)
     (values r)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; Wrapping Foreign Objects
+;;; Printing for Python
 ;;;
-;;; Not all Lisp objects can communicated to Python. Most notably,
+;;; Not all Lisp objects can be communicated to Python.  Most notably,
 ;;; functions and CLOS instances. Instead, we walk all objects before
 ;;; sending them to Python and replace occurrences of non serializable
 ;;; objects with reference handles.
+;;;
+;;; The printed structure is scanned first, such that circular structure
+;;; can be printed correctly using #N= and #N#.
 
-(defvar *object-copies* nil)
+;;; Each entry in the table is either the value T, meaning the object has
+;;; been visited once, or its ID (an integer), meaning the object has been
+;;; scanned multiple times.  A negative ID means that the object has been
+;;; printed at least once.
 
-(defun prepare-object (object)
-  (let ((*object-copies* (make-hash-table)))
-    (copy-or-wrap object)))
+(defvar *pyprint-table*)
 
-(defgeneric copy-or-wrap (object))
+(defvar *pyprint-counter*)
 
-(defgeneric initialize (object prototype))
+(defun pyprint (object &optional (stream *standard-output*))
+  (let ((*pyprint-table* (make-hash-table :test #'eql))
+        (*pyprint-counter* 0))
+    (pyprint-scan object)
+    (pyprint-write object stream)
+    object))
 
-(defmethod copy-or-wrap :around (object)
-  (multiple-value-bind (value present-p)
-      (gethash object *object-copies*)
-    (if present-p
-        value
-        (let ((copy (call-next-method)))
-          (setf (gethash object *object-copies*) copy)
-          (initialize copy object)
-          copy))))
+(defgeneric pyprint-scan (object))
 
-(defmethod copy-or-wrap ((object t))
-  (wrap-foreign-object object))
+(defgeneric pyprint-write (object stream))
 
-(defmethod initialize (object prototype)
-  (declare (ignore object prototype))
-  (values))
+(defmethod pyprint-scan :around ((object t))
+  (unless (or (integerp object)
+              (characterp object)
+              (consp object))
+    (multiple-value-bind (value present-p)
+        (gethash object *pyprint-table*)
+      (cond ((not present-p)
+             (setf (gethash object *pyprint-table*) t)
+             (call-next-method))
+            ((eq value t)
+             (setf (gethash object *pyprint-table*)
+                   (incf *pyprint-counter*))))
+      (values))))
 
-(defmethod copy-or-wrap ((symbol symbol))
-  symbol)
+(defmethod pyprint-scan ((object t))
+  (declare (ignore object)))
 
-(defmethod copy-or-wrap ((number number))
-  number)
+(defmethod pyprint-scan ((cons cons))
+  (pyprint-scan (car cons))
+  (pyprint-scan (cdr cons)))
 
-(defmethod copy-or-wrap ((character character))
-  character)
+(defmethod pyprint-scan ((sequence sequence))
+  (map nil #'pyprint-scan sequence))
 
-(defmethod copy-or-wrap ((cons cons))
-  (cons nil nil))
+(defmethod pyprint-scan ((hash-table hash-table))
+  (maphash
+   (lambda (key value)
+     (pyprint-scan key)
+     (pyprint-scan value))
+   hash-table))
 
-(defmethod initialize ((copy cons) (prototype cons))
-  (setf (car copy) (copy-or-wrap (car prototype)))
-  (setf (cdr copy) (copy-or-wrap (cdr prototype))))
+(defmethod pyprint-write :around ((object t) stream)
+  (let ((id (gethash object *pyprint-table*)))
+    (if (integerp id)
+        (cond ((plusp id)
+               (setf (gethash object *pyprint-table*) (- id))
+               (format stream "#~D=" id)
+               (call-next-method))
+              ((minusp id)
+               (format stream "#~D#" (- id))))
+        (call-next-method))))
 
-(defmethod copy-or-wrap ((sequence sequence))
-  (make-sequence (type-of sequence) (length sequence)))
+(defmethod pyprint-write ((object t) stream)
+  (write-char #\# stream)
+  (prin1 (object-handle object) stream)
+  (write-char #\? stream))
 
-(defmethod initialize ((copy sequence) (prototype sequence))
-  (map-into copy #'copy-or-wrap prototype))
+(defmethod pyprint-write ((number number) stream)
+  (write number :stream stream))
+
+(defmethod pyprint-write ((symbol symbol) stream)
+  (write symbol :stream stream))
+
+(defmethod pyprint-write ((string string) stream)
+  (write string :stream stream))
+
+(defmethod pyprint-write ((cons cons) stream)
+  (write-string "(" stream)
+  (loop for car = (car cons)
+        for cdr = (cdr cons) do
+          (pyprint-write car stream)
+          (write-string " " stream)
+          (cond ((null cdr)
+                 (loop-finish))
+                ((atom cdr)
+                 (write-string " . " stream)
+                 (pyprint-write cdr stream)
+                 (loop-finish))
+                (t (setf cons cdr))))
+  (write-string ")" stream))
+
+(defmethod pyprint-write ((simple-vector simple-vector) stream)
+  (write-string "#(" stream)
+  (loop for elt across simple-vector do
+    (pyprint-write elt stream)
+    (write-char #\space stream))
+  (write-string ")" stream))
+
+(defmethod pyprint-write ((hash-table hash-table) stream)
+  (write-string "{" stream)
+  (maphash
+   (lambda (key value)
+     (pyprint-write key stream)
+     (write-char #\space stream)
+     (pyprint-write value stream)
+     (write-char #\space stream))
+   hash-table)
+  (write-string "}" stream))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
@@ -143,12 +227,12 @@
         (let ((*read-eval* nil)
               (*print-circle* t))
           ;; the value
-          (prin1 (prepare-object value))
+          (pyprint value)
           (terpri)
           ;; the error code
           (if (not condition)
-              (prin1 nil)
-              (prin1
+              (pyprint nil)
+              (pyprint
                (list (class-name (class-of condition))
                      (condition-string condition))))
           (terpri)

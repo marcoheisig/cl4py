@@ -25,6 +25,7 @@ class Stream:
         if self.new == None:
             c = self.stream.read(1)
             if eof_error and not c: raise EOFError()
+            print(c,end='')
         else:
             c = self.new
         self.old, self.new = c, None
@@ -52,6 +53,8 @@ class Readtable:
         self.macro_characters = {}
         self.set_macro_character('(', left_parenthesis)
         self.set_macro_character(')', right_parenthesis)
+        self.set_macro_character('{', left_curly_bracket)
+        self.set_macro_character('}', right_curly_bracket)
         self.set_macro_character("'", single_quote)
         self.set_macro_character('"', double_quote)
         self.set_macro_character('#', sharpsign)
@@ -90,7 +93,7 @@ class Readtable:
             return SyntaxType.NON_TERMINATING_MACRO_CHARACTER
         elif c == '|':
             return SyntaxType.MULTIPLE_ESCAPE
-        elif c in '"\'(),;`':
+        elif c in '"\'(),;`{}[]<>':
             return SyntaxType.TERMINATING_MACRO_CHARACTER
         else:
             return SyntaxType.CONSTITUENT
@@ -213,12 +216,12 @@ def parse(token):
     # symbol
     m = re.fullmatch(symbol_regex, token)
     if m:
-        pkg = m.group(1)
+        package = m.group(1)
         name = m.group(2)
-        if pkg in ['CL', 'COMMON-LISP', None]:
+        if package in ['CL', 'COMMON-LISP', None]:
             if name == 'T': return True
             if name == 'NIL': return False
-        return token
+        return Symbol(name, package)
     raise RuntimeError('Failed to parse token "' + token + '".')
 
 
@@ -230,6 +233,24 @@ def right_parenthesis(r, s, c):
     raise RuntimeError('Unmatched closing parenthesis.')
 
 
+def left_curly_bracket(r, s, c):
+    table = {}
+    data = r.read_delimited_list('}', s, True)
+    if len(data) % 2 == 1:
+        raise RuntimeError('Odd number of hash table data.')
+    while data:
+        key = car(data)
+        rest = cdr(data)
+        value = car(rest)
+        table[key] = value
+        data = cdr(rest)
+    return table
+
+
+def right_curly_bracket(r, s, c):
+    raise RuntimeError('Unmatched closing curly bracket.')
+
+
 def single_quote(r, s, c):
     return Cons("COMMON-LISP:QUOTE", Cons(r.read(s, True), None))
 
@@ -239,7 +260,7 @@ def double_quote(r, s, c):
     while True:
         c = s.read_char()
         if c == '"':
-            return String(result)
+            return result
         elif c == '\\':
             result += s.read_char()
         else:
@@ -284,7 +305,7 @@ def sharpsign_questionmark(r, s, c, n):
     try:
         return r.lisp.foreign_objects[n]
     except:
-        obj = LispObject(r.lisp, n)
+        obj = UnknownLispObject(r.lisp, n)
         r.lisp.foreign_objects[n] = obj
         return obj
 
