@@ -32,7 +32,6 @@ class Lisp:
 
     def eval(self, expr):
         sexp = lispify(self, expr)
-        print(sexp)
         self.stdin.write(sexp + '\n')
         val = self.readtable.read(self.stdout)
         err = self.readtable.read(self.stdout)

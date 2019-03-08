@@ -25,7 +25,6 @@ class Stream:
         if self.new == None:
             c = self.stream.read(1)
             if eof_error and not c: raise EOFError()
-            print(c,end='')
         else:
             c = self.new
         self.old, self.new = c, None
@@ -176,7 +175,7 @@ class Readtable:
                     stream.unread_char()
                     break
 
-        head = Cons(None, None)
+        head = Cons((), ())
         tail = head
         while True:
             skip_whitespace()
@@ -220,7 +219,7 @@ def parse(token):
         name = m.group(2)
         if package in ['CL', 'COMMON-LISP', None]:
             if name == 'T': return True
-            if name == 'NIL': return False
+            if name == 'NIL': return ()
         return Symbol(name, package)
     raise RuntimeError('Failed to parse token "' + token + '".')
 

@@ -3,7 +3,8 @@ Correspondence of Python types and Lisp types in cl4py:
 
 | Python                  |     | Lisp                                 |
 |-------------------------+-----+--------------------------------------|
-| True, False             | <-> | T, NIL                               |
+| True                    | <-> | T                                    |
+| ()                      | <-> | NIL                                  |
 | None                    | --> | NIL                                  |
 | int                     | <-> | integer                              |
 | float                   | <-> | double-float                         |
@@ -44,12 +45,6 @@ class Cons (LispObject):
         self.car = car
         self.cdr = cdr
 
-    def __len__(self):
-        counter = 0
-        for x in self:
-            counter += 1
-        return counter
-
     @reprlib.recursive_repr("...")
     def __repr__(self):
         datum = self
@@ -57,7 +52,7 @@ class Cons (LispObject):
         cdr = datum.cdr
         rcar = repr(car)
         rcdr = repr(cdr)
-        if cdr is None:
+        if null(cdr):
             return "List(" + rcar + ")"
         elif rcdr.startswith("DottedList("):
             return "DottedList(" + rcar + ", " + rcdr[11:]
@@ -102,14 +97,14 @@ class ListIterator:
 
 
 def List(*args):
-    head = None
+    head = ()
     for arg in args[::-1]:
         head = Cons(arg, head)
     return head
 
 
 def DottedList(*args):
-    head = args[-1] if args else None
+    head = args[-1] if args else ()
     for arg in args[-2::-1]:
         head = Cons(arg, head)
     return head
@@ -126,8 +121,8 @@ def Function(arg):
 def car(arg):
     if isinstance(arg, Cons):
         return arg.car
-    elif not arg:
-        return None
+    elif null(arg):
+        return ()
     else:
         raise RuntimeError('Cannot take the CAR of ' + str(arg) + '.')
 
@@ -135,7 +130,19 @@ def car(arg):
 def cdr(arg):
     if isinstance(arg, Cons):
         return arg.cdr
-    elif not arg:
-        return None
+    elif null(arg):
+        return ()
     else:
         raise RuntimeError('Cannot take the CDR of ' + str(arg) + '.')
+
+
+def null(arg):
+    if arg is ():
+        return True
+    if (isinstance(arg,Symbol)
+        and arg.name == "NIL"
+        and (arg.package == "COMMON-LISP" or
+             arg.package == "CL")):
+        return True
+    else:
+        return False
