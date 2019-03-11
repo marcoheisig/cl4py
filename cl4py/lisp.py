@@ -20,6 +20,7 @@ class Lisp:
                                       encoding='utf-8')
         self.stdout = io.TextIOWrapper(p.stdout, encoding='utf-8')
         self.foreign_objects = {}
+        self.package = "COMMON-LISP-USER"
         self.readtable = Readtable(self)
 
 
@@ -33,6 +34,8 @@ class Lisp:
     def eval(self, expr):
         sexp = lispify(self, expr)
         self.stdin.write(sexp + '\n')
+        pkg = self.readtable.read(self.stdout)
+        self.package = pkg
         val = self.readtable.read(self.stdout)
         err = self.readtable.read(self.stdout)
         if isinstance(err, Cons):

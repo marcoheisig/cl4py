@@ -96,6 +96,10 @@
 
 (defvar *pyprint-counter*)
 
+(defgeneric pyprint-scan (object))
+
+(defgeneric pyprint-write (object stream))
+
 (defun pyprint (object &optional (stream *standard-output*))
   (let ((*pyprint-table* (make-hash-table :test #'eql))
         (*pyprint-counter* 0))
@@ -103,14 +107,10 @@
     (pyprint-write object stream)
     object))
 
-(defgeneric pyprint-scan (object))
-
-(defgeneric pyprint-write (object stream))
-
 (defmethod pyprint-scan :around ((object t))
-  (unless (or (integerp object)
-              (characterp object)
-              (symbolp object))
+  (unless (or (symbolp object)
+              (numberp object)
+              (characterp object))
     (multiple-value-bind (value present-p)
         (gethash object *pyprint-table*)
       (cond ((not present-p)
@@ -139,7 +139,6 @@
    hash-table))
 
 (defmethod pyprint-write :around ((object t) stream)
-  (break)
   (let ((id (gethash object *pyprint-table*)))
     (if (integerp id)
         (cond ((plusp id)
@@ -229,7 +228,10 @@
                (clear-input))))
         (let ((*read-eval* nil)
               (*print-circle* t))
-          ;; the value
+          ;; The name of the current package.
+          (pyprint (package-name *package*))
+          (terpri)
+          ;; The value.
           (pyprint value)
           (terpri)
           ;; the error code
@@ -241,4 +243,4 @@
           (terpri)
           (finish-output))))))
 
-;(cl4py)
+(cl4py)
