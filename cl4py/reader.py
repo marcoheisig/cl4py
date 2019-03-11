@@ -214,11 +214,11 @@ def right_parenthesis(r, s, c):
 def left_curly_bracket(r, s, c):
     table = {}
     data = r.read_delimited_list('}', s, True)
-    if len(data) % 2 == 1:
-        raise RuntimeError('Odd number of hash table data.')
     while data:
         key = car(data)
         rest = cdr(data)
+        if null(rest):
+            raise RuntimeError('Odd number of hash table data.')
         value = car(rest)
         table[key] = value
         data = cdr(rest)

@@ -137,11 +137,12 @@
   (map nil #'pyprint-scan sequence))
 
 (defmethod pyprint-scan ((hash-table hash-table))
-  (maphash
-   (lambda (key value)
-     (pyprint-scan key)
-     (pyprint-scan value))
-   hash-table))
+  (when (eq (hash-table-test hash-table) 'equal)
+    (maphash
+     (lambda (key value)
+       (pyprint-scan key)
+       (pyprint-scan value))
+     hash-table)))
 
 (defmethod pyprint-write :around ((object t) stream)
   (let ((id (gethash object *pyprint-table*)))
@@ -193,15 +194,18 @@
   (write-string ")" stream))
 
 (defmethod pyprint-write ((hash-table hash-table) stream)
-  (write-string "{" stream)
-  (maphash
-   (lambda (key value)
-     (pyprint-write key stream)
-     (write-char #\space stream)
-     (pyprint-write value stream)
-     (write-char #\space stream))
-   hash-table)
-  (write-string "}" stream))
+  (cond ((eql (hash-table-test hash-table) 'equal)
+         (write-string "{" stream)
+         (maphash
+          (lambda (key value)
+            (pyprint-write key stream)
+            (write-char #\space stream)
+            (pyprint-write value stream)
+            (write-char #\space stream))
+          hash-table)
+         (write-string "}" stream))
+        (t
+         (call-next-method))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
