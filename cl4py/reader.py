@@ -19,7 +19,7 @@ from .circularity import *
 exponent_markers = 'DdEdFfLlSs'
 integer_regex = re.compile(r"[+-]?[0-9]+\.?")
 ratio_regex = re.compile(r"([+-]?[0-9]+)/([0-9]+)")
-float_regex = re.compile(r"[+-]?[0-9]*\.[0-9]+")
+float_regex = re.compile(r"([+-]?[0-9]+(\.([0-9]+))?)([eEdDfF]([0-9]+))?")
 symbol_regex = re.compile(r"(([^:]+):)?:?([^:]+)")
 
 SyntaxType = Enum('SyntaxType',
@@ -165,7 +165,7 @@ class Readtable:
         # float
         m = re.fullmatch(float_regex, token)
         if m:
-            return float(token)
+            return float(m.group(1)) * (10 ** float(m.group(5)))
         # symbol
         m = re.fullmatch(symbol_regex, token)
         if m:
