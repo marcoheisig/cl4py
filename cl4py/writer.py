@@ -14,7 +14,7 @@ def lispify_datum(obj):
 def lispify_dict(d):
     s = "{"
     for key, value in d.items():
-        s += lispify_datum(key) + " " + lispify_datum(value)
+        s += lispify_datum(key) + " " + lispify_datum(value) + " "
     return s + "}"
 
 

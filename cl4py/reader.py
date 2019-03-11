@@ -198,7 +198,7 @@ class Readtable:
                 tail.cdr = self.read(stream, True)
             else:
                 stream.unread_char()
-                cons = Cons(self.read(stream, True), None)
+                cons = Cons(self.read(stream, True), ())
                 tail.cdr = cons
                 tail = cons
 
