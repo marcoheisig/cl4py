@@ -96,13 +96,18 @@
 
 (defvar *pyprint-counter*)
 
+;; We use this dummy package during printing, to have each symbol written
+;; with its full package prefix.
+(defpackage #:cl4py-empty-package)
+
 (defgeneric pyprint-scan (object))
 
 (defgeneric pyprint-write (object stream))
 
 (defun pyprint (object &optional (stream *standard-output*))
   (let ((*pyprint-table* (make-hash-table :test #'eql))
-        (*pyprint-counter* 0))
+        (*pyprint-counter* 0)
+        (*package* (find-package '#:cl4py-empty-package)))
     (pyprint-scan object)
     (pyprint-write object stream)
     object))

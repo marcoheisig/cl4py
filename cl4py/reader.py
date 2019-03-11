@@ -16,25 +16,11 @@ from .circularity import *
 # 7. There are no invalid characters.
 # 8. The input is assumed to be well formed.
 
-class Stream:
-    def __init__(self, textstream):
-        self.stream = textstream
-        self.old = None
-        self.new = None
-    def read_char(self, eof_error=True):
-        if self.new == None:
-            c = self.stream.read(1)
-            if eof_error and not c: raise EOFError()
-        else:
-            c = self.new
-        self.old, self.new = c, None
-        return c
-    def unread_char(self):
-        if self.old:
-            self.old, self.new = None, self.old
-        else:
-            raise RuntimeError('Duplicate unread_char.')
-
+exponent_markers = 'DdEdFfLlSs'
+integer_regex = re.compile(r"[+-]?[0-9]+\.?")
+ratio_regex = re.compile(r"([+-]?[0-9]+)/([0-9]+)")
+float_regex = re.compile(r"[+-]?[0-9]*\.[0-9]+")
+symbol_regex = re.compile(r"(([^:]+):)?:?([^:]+)")
 
 SyntaxType = Enum('SyntaxType',
                   ['CONSTITUENT',
@@ -164,7 +150,33 @@ class Readtable:
                     else:
                         token.append(y)
             # 10.
-            return parse(''.join(token))
+            return self.parse(''.join(token))
+
+
+    def parse(self, token):
+        # integer
+        m = re.fullmatch(integer_regex, token)
+        if m:
+            return int(m.group(0))
+        # ratio
+        m = re.fullmatch(ratio_regex, token)
+        if m:
+            return Fraction(int(m.group(1)), int(m.group(2)))
+        # float
+        m = re.fullmatch(float_regex, token)
+        if m:
+            return float(token)
+        # symbol
+        m = re.fullmatch(symbol_regex, token)
+        if m:
+            package = m.group(2) or self.lisp.package
+            name = m.group(3)
+            if package in ['CL', 'COMMON-LISP']:
+                if name == 'T': return True
+                if name == 'NIL': return ()
+            return Symbol(name, package)
+        raise RuntimeError('Failed to parse token "' + token + '".')
+
 
 
     def read_delimited_list(self, delim, stream, recursive):
@@ -189,39 +201,6 @@ class Readtable:
                 cons = Cons(self.read(stream, True), None)
                 tail.cdr = cons
                 tail = cons
-
-
-exponent_markers = 'DdEdFfLlSs'
-integer_regex = re.compile(r"[+-]?[0-9]+\.?")
-ratio_regex = re.compile(r"([+-]?[0-9]+)/([0-9]+)")
-float_regex = re.compile(r"[+-]?[0-9]*\.[0-9]+")
-symbol_regex = re.compile(r"([^:]+:)?:?([^:]+)")
-
-
-def parse(token):
-    # integer
-    m = re.fullmatch(integer_regex, token)
-    if m:
-        return int(m.group(0))
-    # ratio
-    m = re.fullmatch(ratio_regex, token)
-    if m:
-        return Fraction(int(m.group(1)), int(m.group(2)))
-    # float
-    m = re.fullmatch(float_regex, token)
-    if m:
-        # TODO handle all exponent markers
-        return float(token)
-    # symbol
-    m = re.fullmatch(symbol_regex, token)
-    if m:
-        package = m.group(1)
-        name = m.group(2)
-        if package in ['CL', 'COMMON-LISP', None]:
-            if name == 'T': return True
-            if name == 'NIL': return ()
-        return Symbol(name, package)
-    raise RuntimeError('Failed to parse token "' + token + '".')
 
 
 def left_parenthesis(r, s, c):

@@ -28,6 +28,26 @@ class LispObject:
     pass
 
 
+class Stream(LispObject):
+    def __init__(self, textstream):
+        self.stream = textstream
+        self.old = None
+        self.new = None
+    def read_char(self, eof_error=True):
+        if self.new == None:
+            c = self.stream.read(1)
+            if eof_error and not c: raise EOFError()
+        else:
+            c = self.new
+        self.old, self.new = c, None
+        return c
+    def unread_char(self):
+        if self.old:
+            self.old, self.new = None, self.old
+        else:
+            raise RuntimeError('Duplicate unread_char.')
+
+
 class Symbol(LispObject):
     def __init__(self, name, package=None):
         self.name = name
