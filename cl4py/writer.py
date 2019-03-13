@@ -26,7 +26,7 @@ def lispify_str(s):
 
 def lispify_tuple(x):
     if len(x) == 0:
-        "NIL"
+        return "NIL"
     else:
         raise RuntimeError('Cannot lispify non-empty tuple.')
 
