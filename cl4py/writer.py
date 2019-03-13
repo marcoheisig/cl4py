@@ -1,4 +1,5 @@
 import re
+import numpy
 from fractions import Fraction
 from .data import *
 from .circularity import *
@@ -8,7 +9,22 @@ def lispify(lisp, obj):
 
 
 def lispify_datum(obj):
-    return lispifiers[type(obj)](obj)
+    lispifier = lispifiers[type(obj)]
+    if lispifier:
+        return lispifier(obj)
+    else:
+        raise RuntimeError("Cannot lispify {}.".format(obj))
+
+
+def lispify_ndarray(A):
+    def rec(A):
+        if not getattr(A, 'ndim'):
+            return lispify_datum(A)
+        if A.ndim == 0:
+            return " " + lispify_datum(A.item())
+        else:
+            return "(" + " ".join(rec(a) for a in A) + ")"
+    return "#{}A".format(A.ndim) + rec(A)
 
 
 def lispify_dict(d):
@@ -28,6 +44,8 @@ def lispify_tuple(x):
     if len(x) == 0:
         return "NIL"
     else:
+        # This should never happen, because decircularize implicitly
+        # converts tuples to cl4py Lists.
         raise RuntimeError('Cannot lispify non-empty tuple.')
 
 
@@ -54,19 +72,24 @@ def lispify_Symbol(x):
 
 
 lispifiers = {
-    bool       : lambda x: "T" if x else "NIL",
-    type(None) : lambda x: "NIL",
-    int        : lambda x: str(x),
-    float      : lambda x: str(x),
-    complex    : lambda x: "#C(" + lispify_datum(x.real) + " " + lispify_datum(x.imag) + ")",
-    list       : lambda x: "#(" + " ".join(lispify_datum(elt) for elt in x) + ")",
-    Fraction   : lambda x: str(x),
-    tuple      : lispify_tuple,
-    str        : lispify_str,
-    dict       : lispify_dict,
-    Cons       : lispify_Cons,
-    Symbol     : lispify_Symbol,
+    # Built-in objects.
+    bool          : lambda x: "T" if x else "NIL",
+    type(None)    : lambda x: "NIL",
+    int           : lambda x: str(x),
+    float         : lambda x: str(x),
+    complex       : lambda x: "#C(" + lispify_datum(x.real) + " " + lispify_datum(x.imag) + ")",
+    list          : lambda x: "#(" + " ".join(lispify_datum(elt) for elt in x) + ")",
+    Fraction      : lambda x: str(x),
+    tuple         : lispify_tuple,
+    str           : lispify_str,
+    dict          : lispify_dict,
+    # cl4py objects.
+    Cons          : lispify_Cons,
+    Symbol        : lispify_Symbol,
     SharpsignEquals : lambda x: "#" + str(x.label) + "=" + lispify_datum(x.obj),
     SharpsignSharpsign : lambda x: "#" + str(x.label) + "#",
     UnknownLispObject : lispify_UnknownLispObject,
+    # Numpy objects.
+    numpy.ndarray : lispify_ndarray,
+    numpy.str_    : lispify_str,
 }

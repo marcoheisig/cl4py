@@ -1,4 +1,5 @@
 import io
+import numpy
 from .data import *
 
 
@@ -90,6 +91,10 @@ instances.
         elif isinstance(obj, tuple):
             for elt in obj:
                 scan(elt)
+        elif isinstance(obj, numpy.ndarray):
+            if obj.dtype.hasobject:
+                for elt in numpy.nditer(obj):
+                    scan(elt)
         elif isinstance(obj, dict):
             for key, val in obj.items():
                 scan(key)
@@ -115,6 +120,11 @@ instances.
                 result = Cons(copy(obj.car), copy(obj.cdr))
             elif isinstance(obj, list):
                 result = list(copy(elt) for elt in obj)
+            elif isinstance(obj, numpy.ndarray):
+                if obj.dtype.hasobject:
+                    result = np.vectorize(copy)(obj)
+                else:
+                    result = obj
             elif isinstance(obj, tuple):
                 # Convert strings to List data to make tuples a shorthand
                 # notation for Lisp data.
