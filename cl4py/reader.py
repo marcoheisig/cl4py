@@ -1,4 +1,5 @@
 import re
+import numpy
 from fractions import Fraction
 from enum import Enum
 from .data import *
@@ -289,8 +290,15 @@ def sharpsign_questionmark(r, s, c, n):
 
 
 def sharpsign_a(r, s, c, n):
-    # TODO
-    return
+    L = r.read(s, True)
+    def listify(L, n):
+        if n == 0:
+            return L
+        elif n == 1:
+            return list(L)
+        else:
+            return [listify(l,n-1) for l in L]
+    return np.array(listify(L, n))
 
 
 def sharpsign_c(r, s, c, n):
