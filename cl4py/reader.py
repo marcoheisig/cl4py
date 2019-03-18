@@ -110,7 +110,7 @@ class Readtable:
             elif (syntax_type == SyntaxType.TERMINATING_MACRO_CHARACTER or
                   syntax_type == SyntaxType.NON_TERMINATING_MACRO_CHARACTER):
                 value = self.get_macro_character(x)(self, stream, x)
-                if value == None:
+                if value is None:
                     continue
                 else:
                     return value
@@ -301,7 +301,7 @@ def sharpsign_a(r, s, c, n):
             return list(L)
         else:
             return [listify(l,n-1) for l in L]
-    return np.array(listify(L, n))
+    return numpy.array(listify(L, n))
 
 
 def sharpsign_c(r, s, c, n):

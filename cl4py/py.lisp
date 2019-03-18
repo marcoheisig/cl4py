@@ -136,6 +136,10 @@
 (defmethod pyprint-scan ((sequence sequence))
   (map nil #'pyprint-scan sequence))
 
+(defmethod pyprint-scan ((array array))
+  (loop for index below (array-total-size array) do
+    (pyprint-scan (row-major-aref array index))))
+
 (defmethod pyprint-scan ((hash-table hash-table))
   (when (eq (hash-table-test hash-table) 'equal)
     (maphash
@@ -226,6 +230,24 @@
          (write-string "}" stream))
         (t
          (call-next-method))))
+
+(defun array-contents (array)
+  (labels ((contents (dimensions index)
+             (if (null dimensions)
+                 (row-major-aref array index)
+                 (let* ((dimension (car dimensions))
+                        (dimensions (cdr dimensions))
+                        (count (reduce #'* dimensions)))
+                   (loop for i below dimension
+                         collect (contents dimensions index)
+                         do (incf index count))))))
+    (contents (array-dimensions array) 0)))
+
+(defmethod pyprint-write ((array array) stream)
+  (write-char #\#)
+  (write (array-rank array) :stream stream)
+  (write-char #\A)
+  (pyprint-write (array-contents array) stream))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;

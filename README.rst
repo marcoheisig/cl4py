@@ -106,6 +106,8 @@ One possible solution is to explicitly load Quicklisp from cl4py:
 
     >>> lisp = cl4py.Lisp(); cl = lisp.function('find-package')('CL')
     >>> cl.load("~/quicklisp/setup.lisp")
+    >>> ql = cl.find_package('QL')
+    >>> ql.quickload('YOUR-SYSTEM')
 
 
 Related Projects
