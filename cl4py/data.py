@@ -60,6 +60,11 @@ class Symbol(LispObject):
             return 'Symbol("{}", None)'.format(self.name)
 
 
+class Package(LispObject, type(reprlib)):
+    def __getitem__(self, name):
+        return self.__dict__[name]
+
+
 class Cons (LispObject):
     def __init__(self, car, cdr):
         self.car = car
@@ -97,7 +102,7 @@ class UnknownLispObject (LispObject):
             pass
 
     def __call__(self, *args):
-        return self.lisp.eval(List(Symbol('FUNCALL', 'CL'), self, *[Quote(arg) for arg in args]))
+        return self.lisp.eval(List(Symbol('FUNCALL', 'CL'), Quote(self), *[Quote(arg) for arg in args]))
 
 
 class ListIterator:
@@ -132,10 +137,6 @@ def DottedList(*args):
 
 def Quote(arg):
     return List(Symbol('QUOTE', 'CL'), arg)
-
-
-def Function(arg):
-    return List(Symbol('FUNCTION', 'CL'), arg)
 
 
 def car(arg):

@@ -144,6 +144,13 @@
        (pyprint-scan value))
      hash-table)))
 
+(defmethod pyprint-scan ((package package))
+  (loop for symbol being each external-symbol of package
+        when (fboundp symbol)
+          unless (macro-function symbol)
+            unless (special-operator-p symbol) do
+              (pyprint-scan (symbol-function symbol))))
+
 (defmethod pyprint-write :around ((object t) stream)
   (let ((id (gethash object *pyprint-table*)))
     (if (integerp id)
@@ -168,6 +175,19 @@
 
 (defmethod pyprint-write ((string string) stream)
   (write string :stream stream))
+
+(defmethod pyprint-write ((package package) stream)
+  (write-string "#M" stream)
+  (pyprint-write
+   (list*
+    (package-name package)
+    (loop for symbol being each external-symbol of package
+          when (fboundp symbol)
+            unless (macro-function symbol)
+              unless (special-operator-p symbol)
+                collect (cons (symbol-name symbol)
+                              (symbol-function symbol))))
+   stream))
 
 (defmethod pyprint-write ((cons cons) stream)
   (write-string "(" stream)

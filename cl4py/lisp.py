@@ -1,7 +1,5 @@
 import subprocess
 import io
-import importlib.machinery
-import importlib.util
 from pkg_resources import resource_filename
 from .data import *
 from .reader import Readtable
@@ -48,28 +46,9 @@ class Lisp:
         return val
 
 
-    def load(self, file):
-        return self.eval(List(Symbol('LOAD', 'CL'), Quote(file)))
-
-
     def find_package(self, name):
-        spec = importlib.machinery.ModuleSpec(name, None)
-        module = importlib.util.module_from_spec(spec)
-        query = ('loop', 'for', 'symbol', 'being', 'each', 'external-symbol', 'of', Quote(name),
-                 'when', ('fboundp', 'symbol'),
-                 'unless', ('special-operator-p', 'symbol'),
-                 'unless', ('macro-function', 'symbol'),
-                 'collect', ('Cons',
-                             ('symbol-name', 'symbol'),
-                             ('symbol-function', 'symbol')))
+        return self.function('CL:FIND-PACKAGE')(name)
 
-        def pythonize(name):
-            name = name.replace('-', '_')
-            if name.isupper():
-                name = name.lower()
-            return name
+    def function(self, name):
+        return self.eval( ('CL:FUNCTION', name) )
 
-        for cons in self.eval(query):
-            if isinstance(cons.car, str):
-                setattr(module, pythonize(cons.car), cons.cdr)
-        return module

@@ -30,14 +30,14 @@ you can execute Lisp code on it:
 
 .. code:: python
 
-    >>> lisp.eval(cl4py.List('+', 2, 3))
+    >>> lisp.eval( ('+', 2, 3) )
     5
 
-    >>> add = lisp.eval(cl4py.Function('+'))
+    >>> add = lisp.function('+')
     >>> add(1, 2, 3, 4)
     10
 
-    >>> div = lisp.eval(cl4py.Function('/'))
+    >>> div = lisp.function('/')
     >>> div(2, 4)
     Fraction(1, 2)
 
@@ -47,15 +47,15 @@ converts List conses to instances of cl4py.Cons.
 
 .. code:: python
 
-    >>> lisp.eval(List('CONS', 1, 2))
+    >>> lisp.eval( ('CONS', 1, 2) )
     Cons(1, 2)
 
-    >>> lst = lisp.eval(List('CONS', 1, List('CONS', 2, None)))
+    >>> lst = lisp.eval( ('CONS', 1, ('CONS', 2, () )) )
     List(1, 2)
     >>> lst.car
     1
     >>> lst.cdr
-    List(2) # an abbreviation for Cons(2, False)
+    List(2) # an abbreviation for Cons(2, ())
 
     # cl4py Conses are iterable!
     >>> list(lst)
@@ -63,13 +63,13 @@ converts List conses to instances of cl4py.Cons.
     >>> sum(lst)
     3
 
-It soon becomes clumsy to use eval to look up individual Lisp functions by
-name.  Instead, it is usually better to convert entire Lisp packages to
-Python modules, like this:
+It soon becomes clumsy to look up individual Lisp functions by name.
+Instead, it is usually better to convert entire Lisp packages to Python
+modules, like this:
 
 .. code:: python
 
-    >>> cl = lisp.find_package('CL')
+    >>> cl = lisp.function('find-package')('CL')
     >>> cl.oppd(5)
     True
 
@@ -86,17 +86,9 @@ Python modules, like this:
     # Of course, circular objects of all kinds are supported.
     >>> twos = cl.cons(2,2)
     >>> twos.cdr = twos
-    >>> cl.mapcar('+', (1, 2, 3, 4), twos)
+    >>> cl.mapcar(lisp.function('+'), (1, 2, 3, 4), twos)
     List(3, 4, 5, 6)
 
-Python strings are not treated as Lisp strings, but read in as Lisp
-symbols.  This means that in order to actually send a string to Lisp, it
-must be wrapped into a cl4py.String, like this:
-
-.. code:: python
-
-    >>> lisp.eval(cl4py.String("foo"))
-    String("foo")
 
 Frequently Asked Problems
 -------------------------
@@ -112,8 +104,8 @@ One possible solution is to explicitly load Quicklisp from cl4py:
 
 .. code:: python
 
-    >>> lisp = cl4py.Lisp(); cl = find_package('CL')
-    >>> cl.load(cl4py.String("~/quicklisp/setup.lisp"))
+    >>> lisp = cl4py.Lisp(); cl = lisp.function('find-package')('CL')
+    >>> cl.load("~/quicklisp/setup.lisp")
 
 
 Related Projects

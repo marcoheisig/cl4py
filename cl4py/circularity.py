@@ -128,7 +128,7 @@ instances.
             elif isinstance(obj, tuple):
                 # Convert strings to List data to make tuples a shorthand
                 # notation for Lisp data.
-                result = List(*(parse_str(elt, readtable)
+                result = List(*(symbol_from_str(elt, readtable)
                                 if isinstance(elt, str)
                                 else copy(elt)
                                 for elt in obj))
@@ -143,7 +143,7 @@ instances.
     return copy(obj)
 
 
-def parse_str(string, readtable):
+def symbol_from_str(string, readtable):
     stream = io.StringIO(string)
     token = readtable.read(stream)
     try:

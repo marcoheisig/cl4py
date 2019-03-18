@@ -1,5 +1,7 @@
 import re
 import numpy
+import importlib.machinery
+import importlib.util
 from fractions import Fraction
 from enum import Enum
 from .data import *
@@ -50,6 +52,7 @@ class Readtable:
         self.set_dispatch_macro_character('#', '?', sharpsign_questionmark)
         self.set_dispatch_macro_character('#', 'A', sharpsign_a)
         self.set_dispatch_macro_character('#', 'C', sharpsign_c)
+        self.set_dispatch_macro_character('#', 'M', sharpsign_m)
         self.set_dispatch_macro_character('#', '=', sharpsign_equal)
         self.set_dispatch_macro_character('#', '#', sharpsign_sharpsign)
 
@@ -305,6 +308,20 @@ def sharpsign_c(r, s, c, n):
     (real, imag) =  list(r.read(s, True))
     return complex(real, imag)
 
+
+def sharpsign_m(r, s, c, n):
+    data = r.read(s)
+    name, alist = data.car, data.cdr
+    spec = importlib.machinery.ModuleSpec(name, None)
+    module = importlib.util.module_from_spec(spec)
+    module.__class__ = Package
+
+    def pythonize(name):
+        return name.replace('-', '_').lower()
+
+    for cons in alist:
+        setattr(module, pythonize(cons.car), cons.cdr)
+    return module
 
 def sharpsign_equal(r, s, c, n):
     value = r.read(s, True)
