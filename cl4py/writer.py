@@ -86,6 +86,7 @@ lispifiers = {
     # cl4py objects.
     Cons          : lispify_Cons,
     Symbol        : lispify_Symbol,
+    Keyword       : lispify_Symbol,
     SharpsignEquals : lambda x: "#" + str(x.label) + "=" + lispify_datum(x.obj),
     SharpsignSharpsign : lambda x: "#" + str(x.label) + "#",
     UnknownLispObject : lispify_UnknownLispObject,

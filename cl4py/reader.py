@@ -23,7 +23,7 @@ exponent_markers = 'DdEdFfLlSs'
 integer_regex = re.compile(r"[+-]?[0-9]+\.?")
 ratio_regex = re.compile(r"([+-]?[0-9]+)/([0-9]+)")
 float_regex = re.compile(r"([+-]?[0-9]+(\.([0-9]+))?)([eEdDfF]([0-9]+))?")
-symbol_regex = re.compile(r"(([^:]+):)?:?([^:]+)")
+symbol_regex = re.compile(r"(?:([^:]*?)(::?))?([^:]+)")
 
 SyntaxType = Enum('SyntaxType',
                   ['CONSTITUENT',
@@ -173,12 +173,19 @@ class Readtable:
         # symbol
         m = re.fullmatch(symbol_regex, token)
         if m:
-            package = m.group(2) or self.lisp.package
+            package = m.group(1)
+            delimiter = m.group(2)
             name = m.group(3)
-            if package in ['CL', 'COMMON-LISP']:
-                if name == 'T': return True
-                if name == 'NIL': return ()
-            return Symbol(name, package)
+            if not package:
+                if delimiter:
+                    return Keyword(name)
+                else:
+                    return Symbol(name, self.lisp.package)
+            else:
+                if package in ['CL', 'COMMON-LISP']:
+                    if name == 'T': return True
+                    if name == 'NIL': return ()
+                return Symbol(name, package)
         raise RuntimeError('Failed to parse token "' + token + '".')
 
 

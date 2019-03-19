@@ -60,6 +60,14 @@ class Symbol(LispObject):
             return 'Symbol("{}", None)'.format(self.name)
 
 
+class Keyword(Symbol):
+    def __init__(self, name):
+        super(Keyword, self).__init__(name, 'KEYWORD')
+
+    def __repr__(self):
+        return 'Keyword("{}")'.format(self.name)
+
+
 class Package(LispObject, type(reprlib)):
     def __getitem__(self, name):
         return self.__dict__[name]
