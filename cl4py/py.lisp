@@ -183,6 +183,9 @@
 (defmethod pyprint-write ((character character) stream)
   (write character :stream stream))
 
+(defmethod pyprint-write ((pathname pathname) stream)
+  (pyprint-write (truename pathname) stream))
+
 (defmethod pyprint-write ((package package) stream)
   (write-string "#M" stream)
   (pyprint-write
