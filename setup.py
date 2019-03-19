@@ -14,7 +14,7 @@ def readme():
 
 setup(
     name='cl4py',
-    version='1.4.1',
+    version='1.5.1',
     description='Common Lisp for Python',
     long_description=readme(),
     long_description_content_type='text/x-rst',
@@ -26,7 +26,7 @@ setup(
     extras_require={},
     keywords='foreign functions FFI',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
