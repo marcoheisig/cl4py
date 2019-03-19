@@ -1,4 +1,5 @@
 import re
+import os
 import numpy
 import importlib.machinery
 import importlib.util
@@ -53,6 +54,7 @@ class Readtable:
         self.set_dispatch_macro_character('#', 'A', sharpsign_a)
         self.set_dispatch_macro_character('#', 'C', sharpsign_c)
         self.set_dispatch_macro_character('#', 'M', sharpsign_m)
+        self.set_dispatch_macro_character('#', 'N', sharpsign_n)
         self.set_dispatch_macro_character('#', '=', sharpsign_equal)
         self.set_dispatch_macro_character('#', '#', sharpsign_sharpsign)
 
@@ -363,3 +365,11 @@ def sharpsign_equal(r, s, c, n):
 
 def sharpsign_sharpsign(r, s, c, n):
     return SharpsignSharpsign(n)
+
+
+def sharpsign_n(r, s, c, n):
+    f = r.read(s, True)
+    A = numpy.load(f)
+    os.remove(f)
+    return A
+

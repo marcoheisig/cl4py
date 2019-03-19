@@ -1,5 +1,7 @@
 import re
 import numpy
+import tempfile
+import random
 from fractions import Fraction
 from .data import *
 from .circularity import *
@@ -17,6 +19,9 @@ def lispify_datum(obj):
 
 
 def lispify_ndarray(A):
+    if not A.dtype.hasobject:
+        return lispify_specialized_ndarray(A)
+
     def rec(A):
         if not getattr(A, 'ndim'):
             return lispify_datum(A)
@@ -25,6 +30,13 @@ def lispify_ndarray(A):
         else:
             return "(" + " ".join(rec(a) for a in A) + ")"
     return "#{}A".format(A.ndim) + rec(A)
+
+
+def lispify_specialized_ndarray(A):
+    r = random.randrange(2**63-1)
+    tmp = tempfile.gettempdir() + '/cl4py-array-{}.npy'.format(r)
+    numpy.save(tmp, A)
+    return '#N"{}"'.format(tmp)
 
 
 def lispify_dict(d):
@@ -71,13 +83,17 @@ def lispify_Symbol(x):
         return "|" + x.package + "|::|" + x.name + "|"
 
 
+def lispify_Complex(x):
+    return "#C(" + lispify_datum(x.real) + " " + lispify_datum(x.imag) + ")"
+
+
 lispifiers = {
     # Built-in objects.
     bool          : lambda x: "T" if x else "NIL",
     type(None)    : lambda x: "NIL",
     int           : str,
     float         : str,
-    complex       : lambda x: "#C(" + lispify_datum(x.real) + " " + lispify_datum(x.imag) + ")",
+    complex       : lispify_Complex,
     list          : lambda x: "#(" + " ".join(lispify_datum(elt) for elt in x) + ")",
     Fraction      : str,
     tuple         : lispify_tuple,
@@ -103,6 +119,6 @@ lispifiers = {
     numpy.uint64  : str,
     numpy.float32 : str,
     numpy.float64 : str,
-    numpy.complex64 : str,
-    numpy.complex128 : str,
+    numpy.complex64 : lispify_Complex,
+    numpy.complex128 : lispify_Complex,
 }
