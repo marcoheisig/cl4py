@@ -266,9 +266,35 @@ def sharpsign(r, s, c):
     return r.get_dispatch_macro_character('#', c)(r, s, c, n)
 
 
+character_names = {
+    'NEWLINE'   : '\x0A',
+    'SPACE'     : '\x20',
+    'RUBOUT'    : '\x7F',
+    'PAGE'      : '\x0C',
+    'TAB'       : '\x09',
+    'BACKSPACE' : '\x08',
+    'RETURN'    : '\x0D',
+    'LINEFEED'  : '\x0A',
+}
+
+
 def sharpsign_backslash(r, s, c, n):
-    # TODO
-    return s.read_char()
+    token = [s.read_char()]
+    while True:
+        c = s.read_char()
+        if c.isalpha():
+            token.append(c)
+        else:
+            s.unread_char()
+            break
+    if len(token) == 1:
+        return token[0]
+    else:
+        key = ''.join(token).upper()
+        if key in character_names:
+            return character_names[key]
+        else:
+            raise RuntimeError('Not a valid character name: {}'.format('key'))
 
 
 def sharpsign_single_quote(r, s, c, n):

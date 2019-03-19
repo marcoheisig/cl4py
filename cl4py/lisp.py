@@ -49,6 +49,7 @@ class Lisp:
     def find_package(self, name):
         return self.function('CL:FIND-PACKAGE')(name)
 
+
     def function(self, name):
         return self.eval( ('CL:FUNCTION', name) )
 

@@ -180,6 +180,9 @@
 (defmethod pyprint-write ((string string) stream)
   (write string :stream stream))
 
+(defmethod pyprint-write ((character character) stream)
+  (write character :stream stream))
+
 (defmethod pyprint-write ((package package) stream)
   (write-string "#M" stream)
   (pyprint-write
