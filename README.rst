@@ -133,3 +133,6 @@ Related Projects
    syntax, without leaving the comfortable Python ecosystem. Once you
    understand the advantages of Lisp, you will doubly appreciate cl4py
    for your projects.
+- `py4cl <https://github.com/bendudson/py4cl>`__ - A library that allows
+   Common Lisp code to access Python libraries.  It is basically the
+   inverse of cl4py.
