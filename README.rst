@@ -136,4 +136,4 @@ Related Projects
    appreciate cl4py for your projects.
 -  `py4cl <https://github.com/bendudson/py4cl>`__
    - A library that allows Common Lisp code to access Python libraries.  It
-    is basically the inverse of cl4py.
+   is basically the inverse of cl4py.
