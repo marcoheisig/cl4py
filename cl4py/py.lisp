@@ -701,7 +701,7 @@
           (let ((*standard-output* (make-broadcast-stream))
                 (*trace-output* (make-broadcast-stream))
                 (*readtable* *cl4py-readtable*)
-                (*read-default-float-format* 'double-float))
+                (*read-default-float-format* 'single-float))
             (ignore-errors
              (unwind-protect (values (eval (read)))
                (clear-input))))

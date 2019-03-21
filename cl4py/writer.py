@@ -87,12 +87,28 @@ def lispify_Complex(x):
     return "#C(" + lispify_datum(x.real) + " " + lispify_datum(x.imag) + ")"
 
 
+def lispify_float16(x):
+    return '{:E}'.format(x).replace('E', 'S')
+
+
+def lispify_float32(x):
+    return '{:E}'.format(x)
+
+
+def lispify_float64(x):
+    return '{:E}'.format(x).replace('E', 'D')
+
+
+def lispify_float128(x):
+    return '{:E}'.format(x).replace('E', 'L')
+
+
 lispifiers = {
     # Built-in objects.
     bool          : lambda x: "T" if x else "NIL",
     type(None)    : lambda x: "NIL",
     int           : str,
-    float         : str,
+    float         : lispify_float64,
     complex       : lispify_Complex,
     list          : lambda x: "#(" + " ".join(lispify_datum(elt) for elt in x) + ")",
     Fraction      : str,
@@ -117,8 +133,10 @@ lispifiers = {
     numpy.uint16  : str,
     numpy.uint32  : str,
     numpy.uint64  : str,
-    numpy.float32 : str,
-    numpy.float64 : str,
+    numpy.float16 : lispify_float16,
+    numpy.float32 : lispify_float32,
+    numpy.float64 : lispify_float64,
+    numpy.float128 : lispify_float128,
     numpy.complex64 : lispify_Complex,
     numpy.complex128 : lispify_Complex,
 }

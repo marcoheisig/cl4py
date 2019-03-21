@@ -16,14 +16,13 @@ from .circularity import *
 # 3. READTABLE-CASE is always :UPCASE.
 # 4. *READ-EVAL* is always false.
 # 5. *READ-BASE* is always 10.
-# 6. *READ-DEFAULT-FORMAT* is always 'double-float.
+# 6. *READ-DEFAULT-FORMAT* is always SINGLE-FLOAT.
 # 7. There are no invalid characters.
 # 8. The input is assumed to be well formed.
 
-exponent_markers = 'DdEdFfLlSs'
 integer_regex = re.compile(r"[+-]?[0-9]+\.?")
 ratio_regex = re.compile(r"([+-]?[0-9]+)/([0-9]+)")
-float_regex = re.compile(r"([+-]?[0-9]+(\.([0-9]+))?)([eEdDfF]([0-9]+))?")
+float_regex = re.compile(r"([+-]?[0-9]+(?:\.[0-9]+)?)(?:([eEsSfFdDlL])([0-9]+))?")
 symbol_regex = re.compile(r"(?:([^:]*?)(::?))?([^:]+)")
 
 SyntaxType = Enum('SyntaxType',
@@ -171,7 +170,19 @@ class Readtable:
         # float
         m = re.fullmatch(float_regex, token)
         if m:
-            return float(m.group(1)) * (10 ** float(m.group(5)))
+            base = m.group(1)
+            exponent_marker = m.group(2)
+            exponent = m.group(3)
+            if not exponent_marker:
+                return numpy.float32(base) * (numpy.float32(10) ** numpy.float32(exponent))
+            elif exponent_marker in 'sS':
+                return numpy.float16(base) * (numpy.float16(10) ** numpy.float16(exponent))
+            elif exponent_marker in 'eEfF':
+                return numpy.float32(base) * (numpy.float32(10) ** numpy.float32(exponent))
+            elif exponent_marker in 'dD':
+                return numpy.float64(base) * (numpy.float64(10) ** numpy.float64(exponent))
+            elif exponent_marker in 'lL':
+                return numpy.float128(base) * (numpy.float128(10) ** numpy.float128(exponent))
         # symbol
         m = re.fullmatch(symbol_regex, token)
         if m:
