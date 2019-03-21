@@ -355,15 +355,32 @@ def sharpsign_c(r, s, c, n):
     return complex(real, imag)
 
 
+pythonizers = {
+    '<'  : 'lt',
+    '<=' : 'le',
+    '='  : 'sim',
+    '>'  : 'gt',
+    '>=' : 'ge',
+    '+'  : 'add',
+    '*'  : 'mul',
+    '-'  : 'sub',
+    'i'  : 'div',
+}
+
+
+def pythonize(name):
+    if name in pythonizers:
+        return pythonizers[name]
+    else:
+        return name.replace('-', '_').lower()
+
+
 def sharpsign_m(r, s, c, n):
     data = r.read(s)
     name, alist = data.car, data.cdr
     spec = importlib.machinery.ModuleSpec(name, None)
     module = importlib.util.module_from_spec(spec)
     module.__class__ = Package
-
-    def pythonize(name):
-        return name.replace('-', '_').lower()
 
     for cons in alist:
         setattr(module, pythonize(cons.car), cons.cdr)
