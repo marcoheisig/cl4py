@@ -41,6 +41,8 @@ class Lisp:
         self.package = pkg
         val = self.readtable.read(self.stdout)
         err = self.readtable.read(self.stdout)
+        msg = self.readtable.read(self.stdout)
+        print(msg,end='')
         if isinstance(err, Cons):
             condition = car(err)
             msg = car(cdr(err)) if cdr(err) else ""
@@ -60,17 +62,19 @@ class Lisp:
 
 
 def install_and_load_quicklisp(lisp):
-    quicklisp_setup = '~/quicklisp/setup.lisp'
-    if not os.path.isfile(quicklisp_setup):
+    quicklisp_setup = os.path.expanduser('~/quicklisp/setup.lisp')
+    if os.path.isfile(quicklisp_setup):
+        lisp.function('cl:load')(quicklisp_setup)
+    else:
         install_quicklisp(lisp)
-    lisp.function('cl:load')(quicklisp_setup)
 
 
 def install_quicklisp(lisp):
     import urllib
     url = 'https://beta.quicklisp.org/quicklisp.lisp'
-    with tempfile.NamedTemporaryFile() as tmp:
+    with tempfile.NamedTemporaryFile(prefix='quicklisp-', suffix='.lisp') as tmp:
         with urllib.request.urlopen(url) as u:
             tmp.write(u.read())
         lisp.function('cl:load')(tmp.name)
-    lisp.eval( ('quicklisp-quickstart:install') )
+    print('Installing Quicklisp...')
+    lisp.eval( ('quicklisp-quickstart:install',) )

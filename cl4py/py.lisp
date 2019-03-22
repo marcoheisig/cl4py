@@ -118,6 +118,7 @@
         (*package* (find-package '#:cl4py-empty-package)))
     (pyprint-scan object)
     (pyprint-write object stream)
+    (terpri stream)
     object))
 
 (defmethod pyprint-scan :around ((object t))
@@ -695,31 +696,34 @@
 
 (defun cl4py (&rest args)
   (declare (ignore args))
-  (loop
-    (let ((*package* (find-package "CL-USER")))
+  (let* ((python (make-two-way-stream *standard-input* *standard-output*))
+         (lisp-output (make-string-output-stream))
+         (*standard-output* lisp-output)
+         (*trace-output* lisp-output)
+         (*readtable* *cl4py-readtable*))
+    (loop
       (multiple-value-bind (value condition)
-          (let ((*standard-output* (make-broadcast-stream))
-                (*trace-output* (make-broadcast-stream))
-                (*readtable* *cl4py-readtable*)
-                (*read-default-float-format* 'single-float))
-            (ignore-errors
-             (unwind-protect (values (eval (read)))
-               (clear-input))))
+          (handler-case (values (eval (read python)) nil)
+            (reader-error (c)
+              (clear-input python)
+              (values nil c))
+            (serious-condition (c)
+              (values nil c)))
         (let ((*read-eval* nil)
               (*print-circle* t))
-          ;; The name of the current package.
-          (pyprint (package-name *package*))
-          (terpri)
-          ;; The value.
-          (pyprint value)
-          (terpri)
-          ;; the error code
+          ;; First, write the name of the current package.
+          (pyprint (package-name *package*) python)
+          ;; Second, write the obtained value.
+          (pyprint value python)
+          ;; Third, write the obtained condition, or NIL.
           (if (not condition)
-              (pyprint nil)
+              (pyprint nil python)
               (pyprint
                (list (class-name (class-of condition))
-                     (condition-string condition))))
-          (terpri)
-          (finish-output))))))
+                     (condition-string condition))
+               python))
+          ;; Fourth, write the output that has been obtained so far.
+          (pyprint (get-output-stream-string lisp-output) python)
+          (finish-output python))))))
 
 (cl4py)
