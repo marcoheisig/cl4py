@@ -98,14 +98,13 @@ Why does my Lisp subprocess complain about ``Package QL does not exist``.
 
 By default, cl4py starts a Lisp subprocess with ``sbcl --script``.  This
 means, that the Lisp process will ignore any user initialization files,
-including the Quicklisp setup.
+including the Quicklisp setup.  However, we provide an extra option for
+installing and loading Quicklisp automatically: ``quicklisp=True``
 
-One possible solution is to explicitly load Quicklisp from cl4py:
 
 .. code:: python
 
-    >>> lisp = cl4py.Lisp(); cl = lisp.function('find-package')('CL')
-    >>> cl.load("~/quicklisp/setup.lisp")
+    >>> lisp = cl4py.Lisp(quicklisp=True); cl = lisp.function('find-package')('CL')
     >>> ql = cl.find_package('QL')
     >>> ql.quickload('YOUR-SYSTEM')
 

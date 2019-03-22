@@ -1,5 +1,8 @@
 import subprocess
 import io
+import os.path
+import urllib.request
+import tempfile
 from pkg_resources import resource_filename
 from .data import *
 from .reader import Readtable
@@ -7,7 +10,7 @@ from .writer import lispify
 
 
 class Lisp:
-    def __init__(self, cmd=['sbcl', '--script']):
+    def __init__(self, cmd=['sbcl', '--script'], quicklisp=False):
         p = subprocess.Popen(cmd + [resource_filename(__name__, 'py.lisp')],
                              stdin = subprocess.PIPE,
                              stdout = subprocess.PIPE,
@@ -20,6 +23,8 @@ class Lisp:
         self.foreign_objects = {}
         self.package = "COMMON-LISP-USER"
         self.readtable = Readtable(self)
+
+        if quicklisp: install_and_load_quicklisp(self)
 
 
     def __del__(self):
@@ -53,3 +58,19 @@ class Lisp:
     def function(self, name):
         return self.eval( ('CL:FUNCTION', name) )
 
+
+def install_and_load_quicklisp(lisp):
+    quicklisp_setup = '~/quicklisp/setup.lisp'
+    if not os.path.isfile(quicklisp_setup):
+        install_quicklisp(lisp)
+    lisp.function('cl:load')(quicklisp_setup)
+
+
+def install_quicklisp(lisp):
+    import urllib
+    url = 'https://beta.quicklisp.org/quicklisp.lisp'
+    with tempfile.NamedTemporaryFile() as tmp:
+        with urllib.request.urlopen(url) as u:
+            tmp.write(u.read())
+        lisp.function('cl:load')(tmp.name)
+    lisp.eval( ('quicklisp-quickstart:install') )
