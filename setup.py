@@ -14,7 +14,7 @@ def readme():
 
 setup(
     name='cl4py',
-    version='1.5.4',
+    version='1.5.5',
     description='Common Lisp for Python',
     long_description=readme(),
     long_description_content_type='text/x-rst',
