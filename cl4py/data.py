@@ -1,25 +1,25 @@
 '''
 Correspondence of Python types and Lisp types in cl4py:
 
-| Python                  |     | Lisp                                 |
-|-------------------------+-----+--------------------------------------|
-| True                    | <-> | T                                    |
-| ()                      | <-> | NIL                                  |
-| None                    | --> | NIL                                  |
-| int                     | <-> | integer                              |
-| float                   | <-> | double-float                         |
-| float                   | <-- | single-float                         |
-| complex                 | <-> | (complex *)                          |
-| string                  | <-> | symbol                               |
-| list                    | <-> | simple-vector                        |
-| tuple                   | --> | list (+ string to symbol conversion) |
-| dict                    | <-> | hash-table                           |
-| str                     | <-> | string                               |
-| cl4py.Cons              | <-> | cons                                 |
-| cl4py.Symbol            | <-> | symbol                               |
-| cl4py.UnknownLispObject | <-> | #N? handle                           |
-| fractions.Fraction      | <-> | ratio                                |
-| numpy.array             | <-> | array                                |
+| Python             |     | Lisp                                 |
+|--------------------+-----+--------------------------------------|
+| True               | <-> | T                                    |
+| ()                 | <-> | NIL                                  |
+| None               | --> | NIL                                  |
+| int                | <-> | integer                              |
+| float              | <-> | double-float                         |
+| float              | <-- | single-float                         |
+| complex            | <-> | (complex *)                          |
+| string             | <-> | symbol                               |
+| list               | <-> | simple-vector                        |
+| tuple              | --> | list (+ string to symbol conversion) |
+| dict               | <-> | hash-table                           |
+| str                | <-> | string                               |
+| cl4py.Cons         | <-> | cons                                 |
+| cl4py.Symbol       | <-> | symbol                               |
+| cl4py.LispWrapper  | <-> | #N? handle                           |
+| fractions.Fraction | <-> | ratio                                |
+| numpy.array        | <-> | array                                |
 
 '''
 import reprlib
@@ -98,7 +98,7 @@ class Cons (LispObject):
         return ListIterator(self)
 
 
-class UnknownLispObject (LispObject):
+class LispWrapper (LispObject):
     def __init__(self, lisp, handle):
         self.lisp = lisp
         self.handle = handle

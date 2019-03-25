@@ -11,9 +11,11 @@ def lispify(lisp, obj):
 
 
 def lispify_datum(obj):
-    lispifier = lispifiers[type(obj)]
+    lispifier = lispifiers.get(type(obj))
     if lispifier:
         return lispifier(obj)
+    elif isinstance(obj, LispWrapper):
+        return "#{}?".format(obj.handle)
     else:
         raise RuntimeError("Cannot lispify {}.".format(obj))
 
@@ -59,10 +61,6 @@ def lispify_tuple(x):
         # This should never happen, because decircularize implicitly
         # converts tuples to cl4py Lists.
         raise RuntimeError('Cannot lispify non-empty tuple.')
-
-
-def lispify_UnknownLispObject(x):
-    return "#{}?".format(x.handle)
 
 
 def lispify_Cons(x):
@@ -121,7 +119,6 @@ lispifiers = {
     Keyword       : lispify_Symbol,
     SharpsignEquals : lambda x: "#" + str(x.label) + "=" + lispify_datum(x.obj),
     SharpsignSharpsign : lambda x: "#" + str(x.label) + "#",
-    UnknownLispObject : lispify_UnknownLispObject,
     # Numpy objects.
     numpy.ndarray : lispify_ndarray,
     numpy.str_    : lispify_str,

@@ -333,7 +333,7 @@ def sharpsign_questionmark(r, s, c, n):
     try:
         return r.lisp.foreign_objects[n]
     except:
-        obj = UnknownLispObject(r.lisp, n)
+        obj = LispWrapper(r.lisp, n)
         r.lisp.foreign_objects[n] = obj
         return obj
 
