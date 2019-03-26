@@ -1,6 +1,13 @@
 (defpackage #:cl4py
   (:use #:common-lisp)
-  (:export #:cl4py))
+  (:export
+   #:cl4py
+   #:dtype-from-type
+   #:dtype-from-code
+   #:dtype-endianness
+   #:dtype-type
+   #:dtype-code
+   #:dtype-size))
 
 (in-package #:cl4py)
 
@@ -369,8 +376,6 @@
 (defconstant +endianness+
   #+little-endian :little-endian
   #+bit-endian :big-endian)
-
-(defgeneric dtype-name (dtype))
 
 (defgeneric dtype-endianness (dtype))
 
