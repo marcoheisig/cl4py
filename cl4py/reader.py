@@ -91,7 +91,7 @@ class Readtable:
 
     def read(self, stream, recursive=False):
         if not isinstance(stream, Stream):
-            stream = Stream(stream)
+            stream = Stream(stream, debug=self.lisp.debug)
         value = self.read_aux(stream)
         if recursive:
             return value

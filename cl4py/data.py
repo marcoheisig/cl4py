@@ -29,14 +29,16 @@ class LispObject:
 
 
 class Stream(LispObject):
-    def __init__(self, textstream):
+    def __init__(self, textstream, debug=False):
         self.stream = textstream
         self.old = None
         self.new = None
+        self.debug = None
     def read_char(self, eof_error=True):
         if self.new == None:
             c = self.stream.read(1)
             if eof_error and not c: raise EOFError()
+            if self.debug: print(c,end='')
         else:
             c = self.new
         self.old, self.new = c, None

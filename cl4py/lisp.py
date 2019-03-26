@@ -23,6 +23,7 @@ class Lisp:
         self.foreign_objects = {}
         self.package = "COMMON-LISP-USER"
         self.readtable = Readtable(self)
+        self.debug = False
 
         if quicklisp: install_and_load_quicklisp(self)
 
@@ -36,6 +37,7 @@ class Lisp:
 
     def eval(self, expr):
         sexp = lispify(self, expr)
+        if self.debug: print(sexp)
         self.stdin.write(sexp + '\n')
         pkg = self.readtable.read(self.stdout)
         self.package = pkg
