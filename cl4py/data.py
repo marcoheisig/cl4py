@@ -33,7 +33,7 @@ class Stream(LispObject):
         self.stream = textstream
         self.old = None
         self.new = None
-        self.debug = None
+        self.debug = debug
     def read_char(self, eof_error=True):
         if self.new == None:
             c = self.stream.read(1)
