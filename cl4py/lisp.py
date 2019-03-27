@@ -52,7 +52,12 @@ class Lisp:
                 RuntimeError.__init__(self, msg)
             raise type(str(condition), (RuntimeError,),
                        {'__init__': init})()
-        return val
+        if val == ():
+            return None
+        elif val.cdr == ():
+            return val.car
+        else:
+            return tuple(val)
 
 
     def find_package(self, name):

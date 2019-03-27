@@ -708,12 +708,12 @@
          (*readtable* *cl4py-readtable*))
     (loop
       (multiple-value-bind (value condition)
-          (handler-case (values (eval (read python)) nil)
+          (handler-case (values (multiple-value-list (eval (read python))) nil)
             (reader-error (c)
               (clear-input python)
-              (values nil c))
+              (values '() c))
             (serious-condition (c)
-              (values nil c)))
+              (values '() c)))
         (let ((*read-eval* nil)
               (*print-circle* t))
           ;; First, write the name of the current package.
