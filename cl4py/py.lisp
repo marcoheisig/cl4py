@@ -113,7 +113,7 @@
 
 ;; We use this dummy package during printing, to have each symbol written
 ;; with its full package prefix.
-(defpackage #:cl4py-empty-package)
+(defpackage #:cl4py-empty-package (:use))
 
 (defgeneric pyprint-scan (object))
 
