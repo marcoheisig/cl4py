@@ -70,14 +70,14 @@ modules, like this:
 .. code:: python
 
     >>> cl = lisp.function('find-package')('CL')
-    >>> cl.oppd(5)
+    >>> cl.oddp(5)
     True
 
     >>> cl.cons(5, None)
     List(5)
 
     >>> cl.remove(5, [1, 5, 2, 7, 5, 9])
-    [1, 2, 3, 4]
+    [1, 2, 7, 9]
 
     # Higher-order functions work, too!
     >>> cl.mapcar(cl.constantly(4), (1, 2, 3))
