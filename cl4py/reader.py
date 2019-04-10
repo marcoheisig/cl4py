@@ -46,6 +46,7 @@ class Readtable:
         self.set_macro_character("'", single_quote)
         self.set_macro_character('"', double_quote)
         self.set_macro_character('#', sharpsign)
+        self.set_macro_character(';', semicolon)
         self.set_dispatch_macro_character('#', '\\', sharpsign_backslash)
         self.set_dispatch_macro_character('#', "'", sharpsign_single_quote)
         self.set_dispatch_macro_character('#', '(', sharpsign_left_parenthesis)
@@ -254,7 +255,7 @@ def right_curly_bracket(r, s, c):
 
 
 def single_quote(r, s, c):
-    return Cons("COMMON-LISP:QUOTE", Cons(r.read(s, True), None))
+    return Cons("COMMON-LISP:QUOTE", Cons(r.read_aux(s), None))
 
 
 def double_quote(r, s, c):
@@ -270,7 +271,8 @@ def double_quote(r, s, c):
 
 
 def semicolon(r, s, c):
-    while s.read_char() != '\n': pass
+    while s.read_char() != '\n':
+        pass
 
 
 def sharpsign(r, s, c):
@@ -318,7 +320,7 @@ def sharpsign_backslash(r, s, c, n):
 
 
 def sharpsign_single_quote(r, s, c, n):
-    return List('CL:FUNCTION', r.read(s, True))
+    return List('CL:FUNCTION', r.read_aux(s))
 
 
 def sharpsign_left_parenthesis(r, s, c, n):
@@ -339,7 +341,7 @@ def sharpsign_questionmark(r, s, c, n):
 
 
 def sharpsign_a(r, s, c, n):
-    L = r.read(s, True)
+    L = r.read_aux(s)
     def listify(L, n):
         if n == 0:
             return L
@@ -351,7 +353,7 @@ def sharpsign_a(r, s, c, n):
 
 
 def sharpsign_c(r, s, c, n):
-    (real, imag) =  list(r.read(s, True))
+    (real, imag) =  list(r.read_aux(s))
     return complex(real, imag)
 
 
@@ -377,7 +379,7 @@ def pythonize(name):
 
 
 def sharpsign_m(r, s, c, n):
-    data = r.read(s)
+    data = r.read_aux(s)
     name, alist = data.car, data.cdr
     spec = importlib.machinery.ModuleSpec(name, None)
     module = importlib.util.module_from_spec(spec)
@@ -388,7 +390,7 @@ def sharpsign_m(r, s, c, n):
     return module
 
 def sharpsign_equal(r, s, c, n):
-    value = r.read(s, True)
+    value = r.read_aux(s)
     return SharpsignEquals(n, value)
 
 
@@ -397,7 +399,7 @@ def sharpsign_sharpsign(r, s, c, n):
 
 
 def sharpsign_n(r, s, c, n):
-    f = r.read(s, True)
+    f = r.read_aux(s)
     A = numpy.load(f)
     os.remove(f)
     return A
