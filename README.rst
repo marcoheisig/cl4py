@@ -2,7 +2,9 @@ cl4py - Common Lisp for Python
 ==============================
 
 The library cl4py (pronounce as *clappy*) allows Python programs to call
-Common Lisp libraries.
+Common Lisp libraries.  Its official mascot is the cl4py-bird:
+
+.. image:: ./cl4py.png
 
 Motivation
 ----------
