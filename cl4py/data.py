@@ -140,6 +140,22 @@ class Cons (LispObject):
     def __iter__(self):
         return ListIterator(self)
 
+    def __getitem__(self, index):
+        cons = self
+        for _ in range(index):
+            if not cons.cdr:
+                raise RuntimeError('{} is too short for index {}.'.format(self,index))
+            cons = cons.cdr
+        return cons.car
+
+    def __setitem__(self, index, value):
+        cons = self
+        for _ in range(index):
+            if not cons.cdr:
+                raise RuntimeError('{} is too short for index {}.'.format(self,index))
+            cons = cons.cdr
+        cons.car = value
+
     @property
     def python_name(self):
         if self.car == Symbol('COMMON-LISP', 'SETF'):
