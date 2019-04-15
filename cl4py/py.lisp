@@ -1,7 +1,27 @@
 (defpackage #:cl4py
   (:use #:common-lisp)
+  (:import-from
+   #+abcl      #:mop
+   #+allegro   #:mop
+   #+clisp     #:clos
+   #+clozure   #:ccl
+   #+cmu       #:clos-mop
+   #+ecl       #:clos
+   #+clasp     #:clos
+   #+lispworks #:clos
+   #+mcl       #:ccl
+   #+sbcl      #:sb-mop
+   #+scl       #:clos
+   #+mezzano   #:mezzano.clos
+
+   #:compute-class-precedence-list
+   #:specializer-direct-methods
+   #:method-specializers
+   #:method-generic-function
+   #:generic-function-name)
   (:export
    #:cl4py
+   #:class-information
    #:dtype-from-type
    #:dtype-from-code
    #:dtype-endianness
@@ -102,10 +122,11 @@
 ;;; The printed structure is scanned first, such that circular structure
 ;;; can be printed correctly using #N= and #N#.
 
-;;; Each entry in the table is either the value T, meaning the object has
-;;; been visited once, or its ID (an integer), meaning the object has been
-;;; scanned multiple times.  A negative ID means that the object has been
-;;; printed at least once.
+;;; Each entry in the *pyprint-table* is either the value T, meaning the
+;;; object has been visited once, or its ID (an integer), meaning the
+;;; object has been scanned multiple times.  When writing, a positive ID
+;;; means that the object should be written as #N=OBJECT, while a negative
+;;; ID means that the object should be written as #N#.
 
 (defvar *pyprint-table*)
 
@@ -164,12 +185,22 @@
        (pyprint-scan value))
      hash-table)))
 
+(defun package-contents-alist (package)
+  (let ((alist '()))
+    ;; Our trick to get from a Lisp-2 to a Lisp-1: functions take precedence.
+    (loop for symbol being each external-symbol of package do
+      (cond ((and (fboundp symbol)
+                  (not (macro-function symbol))
+                  (not (special-operator-p symbol)))
+             (push (cons symbol (symbol-function symbol)) alist))
+            ((and (boundp symbol)
+                  (numberp (symbol-value symbol)))
+             (push (cons symbol (symbol-value symbol)) alist))))
+    alist))
+
 (defmethod pyprint-scan ((package package))
-  (loop for symbol being each external-symbol of package
-        when (fboundp symbol)
-          unless (macro-function symbol)
-            unless (special-operator-p symbol) do
-              (pyprint-scan (symbol-function symbol))))
+  (pyprint-scan (package-name package))
+  (mapc #'pyprint-scan (package-contents-alist package)))
 
 (defmethod pyprint-write :around ((object t) stream)
   (let ((id (gethash object *pyprint-table*)))
@@ -183,9 +214,9 @@
         (call-next-method))))
 
 (defmethod pyprint-write ((object t) stream)
-  (write-char #\# stream)
-  (prin1 (object-handle object) stream)
-  (write-char #\? stream))
+  (format stream "#~D?~S"
+          (object-handle object)
+          (class-name (class-of object))))
 
 (defmethod pyprint-write ((number number) stream)
   (write number :stream stream))
@@ -200,19 +231,25 @@
   (write character :stream stream))
 
 (defmethod pyprint-write ((pathname pathname) stream)
-  (pyprint-write (truename pathname) stream))
+  (pyprint-write (namestring (truename pathname)) stream))
+
+(defun specializer-direct-member-functions (specializer)
+  (loop for method in (specializer-direct-methods specializer)
+        for max below 100
+        when (and (eq (first (method-specializers method)) specializer)
+                  (method-generic-function method))
+          collect (method-generic-function method)))
+
+(defun class-member-functions (class)
+  (remove-duplicates
+   (mapcan #'specializer-direct-member-functions
+           (remove (find-class 't) (compute-class-precedence-list class)))))
 
 (defmethod pyprint-write ((package package) stream)
   (write-string "#M" stream)
   (pyprint-write
-   (list*
-    (package-name package)
-    (loop for symbol being each external-symbol of package
-          when (fboundp symbol)
-            unless (macro-function symbol)
-              unless (special-operator-p symbol)
-                collect (cons (symbol-name symbol)
-                              (symbol-function symbol))))
+   (cons (package-name package)
+         (package-contents-alist package))
    stream))
 
 (defmethod pyprint-write ((cons cons) stream)
@@ -685,7 +722,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
-;;; The cl4py REPL
+;;; Miscellaneous
 
 (defgeneric condition-string (condition))
 
@@ -698,6 +735,23 @@
   (apply #'format nil
          (simple-condition-format-control simple-condition)
          (simple-condition-format-arguments simple-condition)))
+
+(defun class-information (class-name)
+  (let ((class (find-class class-name nil))
+        (alist '()))
+    (loop for member-function in (class-member-functions class) do
+      (let ((name (generic-function-name member-function)))
+        (when (or (symbolp name)
+                  (and (consp name)
+                       (eq (car name) 'setf)
+                       (symbolp (cadr name))
+                       (null (cddr name))))
+          (push (cons name member-function) alist))))
+    alist))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;
+;;; The cl4py REPL
 
 (defun cl4py (&rest args)
   (declare (ignore args))
@@ -728,7 +782,7 @@
                      (condition-string condition))
                python))
           ;; Fourth, write the output that has been obtained so far.
-          (pyprint (get-output-stream-string lisp-output) python)
-          (finish-output python))))))
+          (finish-output python)
+          (pyprint (get-output-stream-string lisp-output) python))))))
 
 (cl4py)

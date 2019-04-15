@@ -20,17 +20,26 @@ class Lisp:
                                       line_buffering=1,
                                       encoding='utf-8')
         self.stdout = io.TextIOWrapper(p.stdout, encoding='utf-8')
-        self.foreign_objects = {}
+        # The name of the current package.
         self.package = "COMMON-LISP-USER"
+        # Each Lisp process has its own readtable.
         self.readtable = Readtable(self)
+        # The classes dict maps from symbols to python classes.
+        self.classes = {}
+        # Whenever the reader encounters a Lisp object whose class is not
+        # yet known, it stores it in this {class_name : instances} dict.
+        # This allows us to patch these instances later.
+        self.unpatched_instances = {}
+        # If debug is true, cl4py will print plenty of debug information.
         self.debug = False
-
-        if quicklisp: install_and_load_quicklisp(self)
+        # Finally, check whether the user wants quicklisp to be available.
+        if quicklisp:
+            install_and_load_quicklisp(self)
 
 
     def __del__(self):
         try:
-            self.stdin.write('(quit)\n')
+            self.stdin.write('(cl-user:quit)\n')
         except:
             pass
 
@@ -40,18 +49,34 @@ class Lisp:
         if self.debug: print(sexp)
         self.stdin.write(sexp + '\n')
         pkg = self.readtable.read(self.stdout)
-        self.package = pkg
         val = self.readtable.read(self.stdout)
         err = self.readtable.read(self.stdout)
         msg = self.readtable.read(self.stdout)
+        # Update the current package.
+        self.package = pkg
+        # Write the Lisp output to the Python output.
         print(msg,end='')
+        # If there is an error, raise it.
         if isinstance(err, Cons):
-            condition = car(err)
-            msg = car(cdr(err)) if cdr(err) else ""
+            condition = err.car
+            msg = err.cdr.car if err.cdr else ""
             def init(self):
                 RuntimeError.__init__(self, msg)
             raise type(str(condition), (RuntimeError,),
                        {'__init__': init})()
+        # Now, check whether there are any unpatched instances.  If so,
+        # figure out their class definitions and patch them accordingly.
+        items = list(self.unpatched_instances.items())
+        self.unpatched_instances.clear()
+        for (cls_name, instances) in items:
+            cls = type(cls_name.python_name, (LispWrapper,), {})
+            self.classes[cls_name] = cls
+            cls_def = self.function('cl4py:class-information')(cls_name)
+            for cons in cls_def:
+                setattr(cls, cons.car.python_name, memberify(cons.cdr))
+            for instance in instances:
+                instance.__class__ = cls
+        # Finally, return the resulting values.
         if val == ():
             return None
         elif val.cdr == ():
@@ -66,6 +91,10 @@ class Lisp:
 
     def function(self, name):
         return self.eval( ('CL:FUNCTION', name) )
+
+
+def memberify(cl_function):
+    return lambda self, *args: cl_function(self, *args)
 
 
 def install_and_load_quicklisp(lisp):

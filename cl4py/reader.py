@@ -84,7 +84,7 @@ class Readtable:
             return SyntaxType.NON_TERMINATING_MACRO_CHARACTER
         elif c == '|':
             return SyntaxType.MULTIPLE_ESCAPE
-        elif c in '"\'(),;`{}[]<>':
+        elif c in '"\'(),;`{}[]':
             return SyntaxType.TERMINATING_MACRO_CHARACTER
         else:
             return SyntaxType.CONSTITUENT
@@ -332,11 +332,15 @@ def sharpsign_left_parenthesis(r, s, c, n):
 
 
 def sharpsign_questionmark(r, s, c, n):
-    try:
-        return r.lisp.foreign_objects[n]
-    except:
-        obj = LispWrapper(r.lisp, n)
-        r.lisp.foreign_objects[n] = obj
+    cls_name = r.read_aux(s)
+    lisp = r.lisp
+    cls = lisp.classes.get(cls_name)
+    if cls:
+        return cls(lisp, n)
+    else:
+        obj = LispWrapper(lisp, n)
+        lst = lisp.unpatched_instances.setdefault(cls_name, [])
+        lst.append(obj)
         return obj
 
 
@@ -357,37 +361,17 @@ def sharpsign_c(r, s, c, n):
     return complex(real, imag)
 
 
-pythonizers = {
-    '<'  : 'lt',
-    '<=' : 'le',
-    '='  : 'sim',
-    '/=' : 'ne',
-    '>'  : 'gt',
-    '>=' : 'ge',
-    '+'  : 'add',
-    '*'  : 'mul',
-    '-'  : 'sub',
-    '/'  : 'div',
-}
-
-
-def pythonize(name):
-    if name in pythonizers:
-        return pythonizers[name]
-    else:
-        return name.replace('-', '_').lower()
-
-
 def sharpsign_m(r, s, c, n):
     data = r.read_aux(s)
     name, alist = data.car, data.cdr
     spec = importlib.machinery.ModuleSpec(name, None)
     module = importlib.util.module_from_spec(spec)
     module.__class__ = Package
-
+    # Now register all exported functions.
     for cons in alist:
-        setattr(module, pythonize(cons.car), cons.cdr)
+        setattr(module, cons.car.python_name, cons.cdr)
     return module
+
 
 def sharpsign_equal(r, s, c, n):
     value = r.read_aux(s)

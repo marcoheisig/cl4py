@@ -50,6 +50,28 @@ class Stream(LispObject):
             raise RuntimeError('Duplicate unread_char.')
 
 
+python_name_translations = {
+    '+'  : 'add',
+    '*'  : 'mul',
+    '-'  : 'sub',
+    '/'  : 'div',
+    '1+'  : 'inc',
+    '1-'  : 'dec',
+}
+
+python_name_substitutions = {
+    '-'  : '_',
+    '*'  : 'O',
+    '+'  : 'X',
+    '<'  : 'lt',
+    '<=' : 'le',
+    '='  : 'sim',
+    '/=' : 'ne',
+    '>'  : 'gt',
+    '>=' : 'ge',
+}
+
+
 class Symbol(LispObject):
     def __init__(self, name, package=None):
         self.name = name
@@ -59,7 +81,26 @@ class Symbol(LispObject):
         if self.package:
             return 'Symbol("{}", "{}")'.format(self.name, self.package)
         else:
-            return 'Symbol("{}", None)'.format(self.name)
+            return 'Symbol("{}")'.format(self.name)
+
+    def __str__(self):
+        return "{}:{}".format(self.package, self.name)
+
+    def __hash__(self):
+        return hash((self.name, self.package))
+
+    def __eq__(self, other):
+        return (self.name, self.package) == (other.name, other.package)
+
+    @property
+    def python_name(self):
+        name = self.name
+        if name in python_name_translations:
+            return python_name_translations[name]
+        else:
+            for (old, new) in python_name_substitutions.items():
+                name = name.replace(old, new)
+            return name.lower()
 
 
 class Keyword(Symbol):
@@ -99,20 +140,12 @@ class Cons (LispObject):
     def __iter__(self):
         return ListIterator(self)
 
-
-class LispWrapper (LispObject):
-    def __init__(self, lisp, handle):
-        self.lisp = lisp
-        self.handle = handle
-
-    def __del__(self):
-        try:
-            self.lisp.eval('#{}!'.format(self.handle))
-        except:
-            pass
-
-    def __call__(self, *args):
-        return self.lisp.eval(List(Symbol('FUNCALL', 'CL'), Quote(self), *[Quote(arg) for arg in args]))
+    @property
+    def python_name(self):
+        if self.car == Symbol('COMMON-LISP', 'SETF'):
+            return 'set_' + python_name(self.cdr.car)
+        else:
+            raise RuntimeError('Not a function name: {}'.format(self))
 
 
 class ListIterator:
@@ -177,3 +210,18 @@ def null(arg):
         return True
     else:
         return False
+
+
+class LispWrapper (LispObject):
+    def __init__(self, lisp, handle):
+        self.lisp = lisp
+        self.handle = handle
+
+    def __del__(self):
+        try:
+            self.lisp.eval('#{}!'.format(self.handle))
+        except:
+            pass
+
+    def __call__(self, *args):
+        return self.lisp.eval(List(Symbol('FUNCALL', 'CL'), Quote(self), *[Quote(arg) for arg in args]))
