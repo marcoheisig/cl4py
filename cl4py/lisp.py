@@ -71,9 +71,9 @@ class Lisp:
         for (cls_name, instances) in items:
             cls = type(cls_name.python_name, (LispWrapper,), {})
             self.classes[cls_name] = cls
-            cls_def = self.function('cl4py:class-information')(cls_name)
-            for cons in cls_def:
-                setattr(cls, cons.car.python_name, memberify(cons.cdr))
+            alist = self.function('cl4py:class-information')(cls_name)
+            for cons in alist:
+                add_member_function(cls, cons.car, cons.cdr)
             for instance in instances:
                 instance.__class__ = cls
         # Finally, return the resulting values.
@@ -93,8 +93,10 @@ class Lisp:
         return self.eval( ('CL:FUNCTION', name) )
 
 
-def memberify(cl_function):
-    return lambda self, *args: cl_function(self, *args)
+def add_member_function(cls, name, gf):
+    class_name = cls.__name__
+    method_name = name.python_name
+    setattr(cls, method_name, lambda self, *args: gf(self, *args))
 
 
 def install_and_load_quicklisp(lisp):
