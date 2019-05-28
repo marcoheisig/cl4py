@@ -412,7 +412,7 @@
 
 (defconstant +endianness+
   #+little-endian :little-endian
-  #+bit-endian :big-endian)
+  #+big-endian :big-endian)
 
 (defgeneric dtype-endianness (dtype))
 
