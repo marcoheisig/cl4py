@@ -78,7 +78,7 @@ modules, like this:
     >>> cl.cons(5, None)
     List(5)
 
-    >>> cl.remove(5, [1, 5, 2, 7, 5, 9])
+    >>> cl.remove(5, [1, -5, 2, 7, 5, 9], key=cl.abs)
     [1, 2, 7, 9]
 
     # Higher-order functions work, too!

@@ -239,5 +239,9 @@ class LispWrapper (LispObject):
         except:
             pass
 
-    def __call__(self, *args):
-        return self.lisp.eval(List(Symbol('FUNCALL', 'CL'), Quote(self), *[Quote(arg) for arg in args]))
+    def __call__(self, *args, **kwargs):
+        restAndKeys = [ Quote(arg) for arg in args ]
+        for key, value in kwargs.items():
+            restAndKeys.append(Keyword(key.upper()))
+            restAndKeys.append(Quote(value))
+        return self.lisp.eval(List(Symbol('FUNCALL', 'CL'), Quote(self), *restAndKeys))
