@@ -269,12 +269,15 @@
                  (setf cons cdr))))
   (write-string ")" stream))
 
-(defmethod pyprint-write ((simple-vector simple-vector) stream)
-  (write-string "#(" stream)
-  (loop for elt across simple-vector do
-    (pyprint-write elt stream)
-    (write-char #\space stream))
-  (write-string ")" stream))
+(defmethod pyprint-write ((vector vector) stream)
+  (cond ((simple-vector-p vector)
+         (write-string "#(" stream)
+         (loop for elt across vector do
+           (pyprint-write elt stream)
+           (write-char #\space stream))
+         (write-string ")" stream))
+        (t
+         (call-next-method))))
 
 (defmethod pyprint-write ((hash-table hash-table) stream)
   (cond ((eql (hash-table-test hash-table) 'equal)
@@ -411,8 +414,13 @@
 (make-float-converters encode-float64 decode-float64 11 52 nil)
 
 (defconstant +endianness+
-  #+little-endian :little-endian
-  #+big-endian :big-endian)
+  #+(and sbcl little-endian) :little-endian
+  #+(and sbcl big-endian) :big-endian
+  #+(and ccl little-endian-target) :little-endian
+  #+(and ccl big-endian-target) :big-endian
+  #+(and clisp) (if sys::*big-endian* :big-endian :little-endian)
+  ;; Otherwise, we make an educated guess.
+  #+(not (or sbcl ccl clisp)) :little-endian)
 
 (defgeneric dtype-endianness (dtype))
 
