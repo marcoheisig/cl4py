@@ -97,7 +97,7 @@ def lispify_float64(x):
     return '{:E}'.format(x).replace('E', 'D')
 
 
-def lispify_float128(x):
+def lispify_longdouble(x):
     return '{:E}'.format(x).replace('E', 'L')
 
 
@@ -133,7 +133,7 @@ lispifiers = {
     numpy.float16 : lispify_float16,
     numpy.float32 : lispify_float32,
     numpy.float64 : lispify_float64,
-    numpy.float128 : lispify_float128,
+    numpy.longdouble : lispify_longdouble,
     numpy.complex64 : lispify_Complex,
     numpy.complex128 : lispify_Complex,
 }
