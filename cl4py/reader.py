@@ -183,7 +183,7 @@ class Readtable:
             elif exponent_marker in 'dD':
                 return numpy.float64(base) * (numpy.float64(10) ** numpy.float64(exponent))
             elif exponent_marker in 'lL':
-                return numpy.float128(base) * (numpy.float128(10) ** numpy.float128(exponent))
+                return numpy.longdouble(base) * (numpy.longdouble(10) ** numpy.longdouble(exponent))
         # symbol
         m = re.fullmatch(symbol_regex, token)
         if m:
