@@ -43,6 +43,10 @@ you can execute Lisp code on it:
     >>> div(2, 4)
     Fraction(1, 2)
 
+    # You can look up variable values using Symbol structures
+    >>> lisp.eval(cl4py.Symbol('*PRINT-BASE*', "COMMON-LISP"))                                                       
+    10
+
 Some Lisp data structures have no direct equivalent in Python, most
 notably, cons cells.  The cl4py module provides a suitable Cons class and
 converts List conses to instances of cl4py.Cons.
@@ -80,6 +84,15 @@ modules, like this:
 
     >>> cl.remove(5, [1, -5, 2, 7, 5, 9], key=cl.abs)
     [1, 2, 7, 9]
+
+    # Common Lisp names with hyphens are translated into
+    # names with underscores
+    >>> cl.type_of("foo")                                                                                            
+    List(Symbol("SIMPLE-ARRAY", "COMMON-LISP"), Symbol("CHARACTER", "COMMON-LISP"), List(3))
+    # note that strings (including symbol names) are *not* translated
+    # in this way, so we have "COMMON-LISP", not "COMMON_LISP", and
+    # these names are case-flattened to upper case.
+
 
     # Higher-order functions work, too!
     >>> cl.mapcar(cl.constantly(4), (1, 2, 3))
