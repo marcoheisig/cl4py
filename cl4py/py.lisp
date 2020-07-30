@@ -766,31 +766,33 @@
   (let* ((python (make-two-way-stream *standard-input* *standard-output*))
          (lisp-output (make-string-output-stream))
          (*standard-output* lisp-output)
-         (*trace-output* lisp-output)
-         (*readtable* *cl4py-readtable*))
-    (loop
-      (multiple-value-bind (value condition)
-          (handler-case (values (multiple-value-list (eval (read python))) nil)
-            (reader-error (c)
-              (clear-input python)
-              (values '() c))
-            (serious-condition (c)
-              (values '() c)))
-        (let ((*read-eval* nil)
-              (*print-circle* t))
-          ;; First, write the name of the current package.
-          (pyprint (package-name *package*) python)
-          ;; Second, write the obtained value.
-          (pyprint value python)
-          ;; Third, write the obtained condition, or NIL.
-          (if (not condition)
-              (pyprint nil python)
-              (pyprint
-               (list (class-name (class-of condition))
-                     (condition-string condition))
-               python))
-          ;; Fourth, write the output that has been obtained so far.
-          (finish-output python)
-          (pyprint (get-output-stream-string lisp-output) python))))))
+         (*trace-output* lisp-output))
+    (flet ((read-python ()
+             (let ((*readtable* *cl4py-readtable*))
+               (read python))))
+      (loop
+        (multiple-value-bind (value condition)
+            (handler-case (values (multiple-value-list (eval (read-python))) nil)
+              (reader-error (c)
+                (clear-input python)
+                (values '() c))
+              (serious-condition (c)
+                (values '() c)))
+          (let ((*read-eval* nil)
+                (*print-circle* t))
+            ;; First, write the name of the current package.
+            (pyprint (package-name *package*) python)
+            ;; Second, write the obtained value.
+            (pyprint value python)
+            ;; Third, write the obtained condition, or NIL.
+            (if (not condition)
+                (pyprint nil python)
+                (pyprint
+                 (list (class-name (class-of condition))
+                       (condition-string condition))
+                 python))
+            ;; Fourth, write the output that has been obtained so far.
+            (finish-output python)
+            (pyprint (get-output-stream-string lisp-output) python)))))))
 
 (cl4py)
