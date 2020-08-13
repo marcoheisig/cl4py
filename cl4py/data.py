@@ -163,6 +163,12 @@ class Cons (LispObject):
         else:
             raise RuntimeError('Not a function name: {}'.format(self))
 
+    def __eq__(self, other) -> bool:
+        if isinstance(other, Cons):
+            return self.car == other.car and self.cdr == other.cdr
+        else:
+            return False
+
 
 class ListIterator:
     def __init__(self, elt):
