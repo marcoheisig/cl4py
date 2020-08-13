@@ -7,3 +7,5 @@ __pycache__/
 *.so
 *~
 .cache
+.mypy_cache
+.DS_Store
