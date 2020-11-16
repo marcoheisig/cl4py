@@ -13,7 +13,7 @@ _DEFAULT_COMMAND = ('sbcl', '--script')
 
 class Lisp:
     debug: bool
-    backtrace: bool
+    _backtrace: bool
 
     def __init__(self, cmd=_DEFAULT_COMMAND, quicklisp=False, debug=False,
                  backtrace=False):
@@ -44,8 +44,18 @@ class Lisp:
             install_and_load_quicklisp(self)
         #if backtrace:
         #    self.load_trivial_backtrace(quicklisp)
-        self.backtrace = backtrace
+        self._backtrace = backtrace
         self.eval( ('defparameter', 'cl4py::*backtrace*', backtrace) )
+
+    @property
+    def backtrace(self) -> bool:
+        return self._backtrace
+
+    @backtrace.setter
+    def backtrace(self, value: bool) -> bool:
+        self.eval ( ('setf', 'cl4py::*backtrace*', value))
+        self._backtrace = value
+        return self._backtrace
 
 
     def __del__(self):
