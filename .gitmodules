@@ -1,3 +1,0 @@
-[submodule "ext/trivial-backtrace"]
-	path = ext/trivial-backtrace
-	url = https://gitlab.common-lisp.net/rgoldman/trivial-backtrace.git
