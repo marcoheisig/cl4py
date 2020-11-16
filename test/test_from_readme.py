@@ -1,6 +1,8 @@
-from pytest import fixture
+import os
+import pytest
 import fractions
 
+from pytest import fixture
 import cl4py
 from cl4py import List, Symbol
 
@@ -60,3 +62,11 @@ def test_circular_objects(cl, lisp):
     twos.cdr = twos
     assert cl.mapcar(lisp.function("+"), (1, 2, 3, 4), twos) == \
         List(3, 4, 5, 6)
+
+def test_error(cl, lisp):
+    retval = cl.compile_file(
+        os.path.join(os.path.dirname(__file__), "sample-program.lisp")
+    )
+    cl.load(retval[0])
+    with pytest.raises(RuntimeError):
+        lisp.eval( ("CL-USER::MAKE-ERROR", ))
