@@ -39,14 +39,18 @@ class Lisp:
         self.unpatched_instances = {}
         # If debug is true, cl4py will print plenty of debug information.
         self.debug = debug
+
+        # Collect ASDF -- we'll need it for UIOP later
+        self.function('CL:REQUIRE')(Symbol("ASDF", "KEYWORD"))
+
         # Finally, check whether the user wants quicklisp to be available.
         self.quicklisp = quicklisp
         if quicklisp:
             install_and_load_quicklisp(self)
-        if backtrace:
-            self.load_trivial_backtrace(quicklisp)
         self._backtrace = backtrace
         self.eval( ('defparameter', 'cl4py::*backtrace*', backtrace) )
+
+
 
     @property
     def backtrace(self) -> bool:
@@ -54,8 +58,6 @@ class Lisp:
 
     @backtrace.setter
     def backtrace(self, value: bool) -> bool:
-        if value and not self.backtrace:
-            self.load_trivial_backtrace(self.quicklisp)
         self.eval ( ('setf', 'cl4py::*backtrace*', value))
         self._backtrace = value
         return self._backtrace
@@ -63,7 +65,7 @@ class Lisp:
 
     def __del__(self):
         try:
-            self.stdin.write('(cl-user:quit)\n')
+            self.stdin.write('(uiop:quit 0)\n')
         except:                 # pylint: disable=bare-except
             pass
 
@@ -116,23 +118,8 @@ class Lisp:
     def function(self, name):
         return self.eval( ('CL:FUNCTION', name) )
 
-    def load_trivial_backtrace(self, use_quicklisp: bool):
-        if use_quicklisp:
-            self.eval( ('quicklisp:ql', "trivial-backtrace"))
-        else:
-            cl = self.find_package('CL')
-            cl.require(Symbol("ASDF"))
-            asdf = self.find_package('ASDF')
-            if not asdf.find_system("trivial-backtrace", False):
-                old_registry = self.eval(Symbol('*CENTRAL-REGISTRY*', "ASDF"))
-                self.eval( ("SETF", "ASDF::*CENTRAL-REGISTRY*",
-                            Quote(
-                                Cons( os.path.abspath(os.path.join(os.path.dirname(__file__), '../ext/trivial-backtrace')) + "/",
-                                      old_registry))))
-            asdf.load_system("trivial-backtrace")
 
 def add_member_function(cls, name, gf):
-    class_name = cls.__name__
     method_name = name.python_name
     setattr(cls, method_name, lambda self, *args: gf(self, *args))
 

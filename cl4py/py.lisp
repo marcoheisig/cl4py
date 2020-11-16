@@ -31,6 +31,8 @@
 
 (in-package #:cl4py)
 
+(defvar *backtrace* nil)
+
 ;;; Welcome to the Lisp side of cl4py. Basically, this is just a REPL that
 ;;; reads expressions from the Python side and prints results back to
 ;;; Python.
@@ -785,12 +787,20 @@
             ;; Second, write the obtained value.
             (pyprint value python)
             ;; Third, write the obtained condition, or NIL.
-            (if (not condition)
-                (pyprint nil python)
+            (if condition
                 (pyprint
                  (list (class-name (class-of condition))
+                       (if *backtrace*
+                           (concatenate 'string
+                                        (condition-string condition)
+                                        (with-output-to-string (str)
+                                          (funcall (intern "PRINT-CONDITION-BACKTRACE"
+                                                           (find-package :uiop))
+                                                   condition
+                                                   :stream str))))
                        (condition-string condition))
-                 python))
+                 python)
+                (pyprint nil python))
             ;; Fourth, write the output that has been obtained so far.
             (finish-output python)
             (pyprint (get-output-stream-string lisp-output) python)))))))
