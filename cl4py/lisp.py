@@ -1,17 +1,24 @@
 import subprocess
 import io
 import os.path
-import urllib.request
+from urllib import request
 import tempfile
 from pkg_resources import resource_filename
-from .data import *
+from .data import LispWrapper, Cons
 from .reader import Readtable
 from .writer import lispify
 
+_DEFAULT_COMMAND = ('sbcl', '--script')
+
 
 class Lisp:
-    def __init__(self, cmd=['sbcl', '--script'], quicklisp=False):
-        p = subprocess.Popen(cmd + [resource_filename(__name__, 'py.lisp')],
+    debug: bool
+    backtrace: bool
+
+    def __init__(self, cmd=_DEFAULT_COMMAND, quicklisp=False, debug=False,
+                 backtrace=False):
+        command = list(cmd)
+        p = subprocess.Popen(command + [resource_filename(__name__, 'py.lisp')],
                              stdin = subprocess.PIPE,
                              stdout = subprocess.PIPE,
                              stderr = subprocess.PIPE,
@@ -31,10 +38,14 @@ class Lisp:
         # This allows us to patch these instances later.
         self.unpatched_instances = {}
         # If debug is true, cl4py will print plenty of debug information.
-        self.debug = False
+        self.debug = debug
         # Finally, check whether the user wants quicklisp to be available.
         if quicklisp:
             install_and_load_quicklisp(self)
+        #if backtrace:
+        #    self.load_trivial_backtrace(quicklisp)
+        self.backtrace = backtrace
+        self.eval( ('defparameter', 'cl4py::*backtrace*', backtrace) )
 
 
     def __del__(self):
@@ -46,7 +57,7 @@ class Lisp:
 
     def eval(self, expr):
         sexp = lispify(self, expr)
-        if self.debug: print(sexp)
+        if self.debug: print(sexp) # pylint: disable=multiple-statements
         self.stdin.write(sexp + '\n')
         pkg = self.readtable.read(self.stdout)
         val = self.readtable.read(self.stdout)
@@ -108,10 +119,9 @@ def install_and_load_quicklisp(lisp):
 
 
 def install_quicklisp(lisp):
-    import urllib
     url = 'https://beta.quicklisp.org/quicklisp.lisp'
     with tempfile.NamedTemporaryFile(prefix='quicklisp-', suffix='.lisp') as tmp:
-        with urllib.request.urlopen(url) as u:
+        with request.urlopen(url) as u:
             tmp.write(u.read())
         lisp.function('cl:load')(tmp.name)
     print('Installing Quicklisp...')
