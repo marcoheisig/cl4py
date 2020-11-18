@@ -3,8 +3,9 @@ language: python
 python:
   - "3.7"
   - "3.8"
-  - "3.8-dev"  # 3.8 development branch
-  - "nightly"  # nightly build
+  - "3.9"
+  # Don't test on 3.10
+  # - "nightly"  # nightly build
 
 addons:
   apt:
