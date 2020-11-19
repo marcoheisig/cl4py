@@ -1,17 +1,24 @@
 import subprocess
 import io
 import os.path
-import urllib.request
+from urllib import request
 import tempfile
 from pkg_resources import resource_filename
-from .data import *
+from .data import LispWrapper, Cons, Symbol, Quote
 from .reader import Readtable
 from .writer import lispify
 
+_DEFAULT_COMMAND = ('sbcl', '--script')
+
 
 class Lisp:
-    def __init__(self, cmd=['sbcl', '--script'], quicklisp=False):
-        p = subprocess.Popen(cmd + [resource_filename(__name__, 'py.lisp')],
+    debug: bool
+    _backtrace: bool
+
+    def __init__(self, cmd=_DEFAULT_COMMAND, quicklisp=False, debug=False,
+                 backtrace=False):
+        command = list(cmd)
+        p = subprocess.Popen(command + [resource_filename(__name__, 'py.lisp')],
                              stdin = subprocess.PIPE,
                              stdout = subprocess.PIPE,
                              stderr = subprocess.PIPE,
@@ -31,22 +38,41 @@ class Lisp:
         # This allows us to patch these instances later.
         self.unpatched_instances = {}
         # If debug is true, cl4py will print plenty of debug information.
-        self.debug = False
+        self.debug = debug
+
+        # Collect ASDF -- we'll need it for UIOP later
+        self.function('CL:REQUIRE')(Symbol("ASDF", "KEYWORD"))
+
         # Finally, check whether the user wants quicklisp to be available.
+        self.quicklisp = quicklisp
         if quicklisp:
             install_and_load_quicklisp(self)
+        self._backtrace = backtrace
+        self.eval( ('defparameter', 'cl4py::*backtrace*', backtrace) )
+
+
+
+    @property
+    def backtrace(self) -> bool:
+        return self._backtrace
+
+    @backtrace.setter
+    def backtrace(self, value: bool) -> bool:
+        self.eval ( ('setf', 'cl4py::*backtrace*', value))
+        self._backtrace = value
+        return self._backtrace
 
 
     def __del__(self):
         try:
-            self.stdin.write('(cl-user:quit)\n')
-        except:
+            self.stdin.write('(uiop:quit 0)\n')
+        except:                 # pylint: disable=bare-except
             pass
 
 
     def eval(self, expr):
         sexp = lispify(self, expr)
-        if self.debug: print(sexp)
+        if self.debug: print(sexp) # pylint: disable=multiple-statements
         self.stdin.write(sexp + '\n')
         pkg = self.readtable.read(self.stdout)
         val = self.readtable.read(self.stdout)
@@ -94,7 +120,6 @@ class Lisp:
 
 
 def add_member_function(cls, name, gf):
-    class_name = cls.__name__
     method_name = name.python_name
     setattr(cls, method_name, lambda self, *args: gf(self, *args))
 
@@ -108,10 +133,9 @@ def install_and_load_quicklisp(lisp):
 
 
 def install_quicklisp(lisp):
-    import urllib
     url = 'https://beta.quicklisp.org/quicklisp.lisp'
     with tempfile.NamedTemporaryFile(prefix='quicklisp-', suffix='.lisp') as tmp:
-        with urllib.request.urlopen(url) as u:
+        with request.urlopen(url) as u:
             tmp.write(u.read())
         lisp.function('cl:load')(tmp.name)
     print('Installing Quicklisp...')

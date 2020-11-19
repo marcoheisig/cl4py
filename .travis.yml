@@ -1,0 +1,23 @@
+language: python
+
+python:
+  - "3.7"
+  - "3.8"
+  - "3.9"
+  # Don't test on 3.10
+  # - "nightly"  # nightly build
+
+addons:
+  apt:
+    update: true
+
+before_install:
+  - sudo apt-get -y install sbcl
+
+# command to install dependencies
+install:
+  - pip install -e .
+
+# command to run tests
+script:
+  - pytest
