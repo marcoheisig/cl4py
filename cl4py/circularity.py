@@ -76,7 +76,7 @@ instances.
             return
         key = id(obj)
         if key in table:
-            if table[key] is 0:
+            if table[key] == 0:
                 table[key] = n
                 n += 1
             return

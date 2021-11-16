@@ -32,8 +32,44 @@ you can execute Lisp code on it:
 
 .. code:: python
 
+    # In Lisp, numbers evaluate to themselves.
+    >>> lisp.eval( 42 )
+    42
+
+    # ('+', 2, 3) is a short notation for cl4py.List(cl4py.Symbol('+'), 2, 3).
+    # For convenience, whenever a Python tuple is converted to Lisp
+    # data, any strings therein are automatically converted to Lisp symbols.
     >>> lisp.eval( ('+', 2, 3) )
     5
+
+    # Nested expressions are allowed, too.
+    >>> lisp.eval( ('/', ('*', 3, 5), 2) )
+    Fraction(15, 2)
+
+    # Use cl4py.List instead of tuples to avoid the automatic conversion of
+    # strings to symbols.
+    >>> lisp.eval( cl4py.List(cl4py.Symbol('STRING=', 'CL'), 'foo', 'bar') )
+    ()
+    >>> lisp.eval( cl4py.List(cl4py.Symbol('STRING=', 'CL'), 'foo', 'foo') )
+    True
+
+    # Here is how you can lookup a symbol's value:
+    >>> lisp.eval(cl4py.Symbol('*PRINT-BASE*', "COMMON-LISP"))
+    10
+
+    # Of course you can also use Lisp macros:
+    >>> lisp.eval( ('loop', 'for', 'i', 'below', 5, 'collect', 'i') )
+    List(0, 1, 2, 3, 4)
+
+    >>> lisp.eval( ('WITH-OUTPUT-TO-STRING', ('STREAM',),
+                      ('PRINC', 12, 'STREAM'),
+                      ('PRINC', 34, 'STREAM')) )
+    '1234'
+
+A cl4py.Lisp object not only provides ``eval``, but also methods for
+looking up functions and packages:
+
+.. code:: python
 
     >>> add = lisp.function('+')
     >>> add(1, 2, 3, 4)
@@ -43,13 +79,44 @@ you can execute Lisp code on it:
     >>> div(2, 4)
     Fraction(1, 2)
 
-    # You can look up variable values using Symbol structures
-    >>> lisp.eval(cl4py.Symbol('*PRINT-BASE*', "COMMON-LISP"))                                                       
-    10
+    # Lisp packages are automatically converted to Python modules.
+    >>> cl = lisp.function('find-package')('CL')
+    >>> cl.oddp(5)
+    True
 
-Some Lisp data structures have no direct equivalent in Python, most
-notably, cons cells.  The cl4py module provides a suitable Cons class and
-converts List conses to instances of cl4py.Cons.
+    >>> cl.cons(5, None)
+    List(5)
+
+    >>> cl.remove(5, [1, -5, 2, 7, 5, 9], key=cl.abs)
+    [1, 2, 7, 9]
+
+    # Higher-order functions work, too!
+    >>> cl.mapcar(cl.constantly(4), (1, 2, 3))
+    List(4, 4, 4)
+
+When converting Common Lisp packages to Python modules, we run into the
+problem that not every Common Lisp symbol name is a valid Python
+identifier.  As a remedy, so we attempt to substitute problematic
+characters and symbols with something that Python can digest.  Here you can
+see this substitution rules in action:
+
+.. code:: python
+
+    # hyphens are turned into underscores
+    >>> cl.type_of("foo")
+    List(Symbol("SIMPLE-ARRAY", "COMMON-LISP"), Symbol("CHARACTER", "COMMON-LISP"), List(3))
+
+    # The functions +, -, *, /, 1+, and 1- are renamed to add, sub,
+    # mul, div, inc, and dec, respectively.
+    >>> cl.add(2,3,4,5)
+    14
+
+    # Within a string, occurrences of -, *, +, <=, <, =, /=, >=, gt, and ~,
+    # are replaced by _, O, X, le, lt, sim, ne, ge, ge, gt, and tilde, respectively.
+    >>> cl.stringgt('baz', 'bar')
+    2
+
+The cl4py module provides a Cons class that mimics cons cells in Lisp.
 
 .. code:: python
 
@@ -69,38 +136,15 @@ converts List conses to instances of cl4py.Cons.
     >>> sum(lst)
     3
 
-It soon becomes clumsy to look up individual Lisp functions by name.
-Instead, it is usually better to convert entire Lisp packages to Python
-modules, like this:
+    # cl4py also supports dotted and circular lists.
+    >>> lisp.eval( ('CONS', 1, ('CONS', 2, 3 )) )
+    DottedList(1, 2, 3)
 
-.. code:: python
-
-    >>> cl = lisp.function('find-package')('CL')
-    >>> cl.oddp(5)
-    True
-
-    >>> cl.cons(5, None)
-    List(5)
-
-    >>> cl.remove(5, [1, -5, 2, 7, 5, 9], key=cl.abs)
-    [1, 2, 7, 9]
-
-    # Common Lisp names with hyphens are translated into
-    # names with underscores
-    >>> cl.type_of("foo")                                                                                            
-    List(Symbol("SIMPLE-ARRAY", "COMMON-LISP"), Symbol("CHARACTER", "COMMON-LISP"), List(3))
-    # note that strings (including symbol names) are *not* translated
-    # in this way, so we have "COMMON-LISP", not "COMMON_LISP", and
-    # these names are case-flattened to upper case.
-
-
-    # Higher-order functions work, too!
-    >>> cl.mapcar(cl.constantly(4), (1, 2, 3))
-    List(4, 4, 4)
-
-    # Of course, circular objects of all kinds are supported.
     >>> twos = cl.cons(2,2)
     >>> twos.cdr = twos
+    >>> twos
+    DottedList(2, ...)
+
     >>> cl.mapcar(lisp.function('+'), (1, 2, 3, 4), twos)
     List(3, 4, 5, 6)
 

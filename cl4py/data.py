@@ -1,5 +1,4 @@
-'''
-Correspondence of Python types and Lisp types in cl4py:
+'''Correspondence of Python types and Lisp types in cl4py:
 
 | Python             |     | Lisp                                 |
 |--------------------+-----+--------------------------------------|
@@ -10,9 +9,8 @@ Correspondence of Python types and Lisp types in cl4py:
 | float              | <-> | double-float                         |
 | float              | <-- | single-float                         |
 | complex            | <-> | (complex *)                          |
-| string             | <-> | symbol                               |
 | list               | <-> | simple-vector                        |
-| tuple              | --> | list (+ string to symbol conversion) |
+| tuple              | --> | list                                 |
 | dict               | <-> | hash-table                           |
 | str                | <-> | string                               |
 | cl4py.Cons         | <-> | cons                                 |
@@ -20,6 +18,10 @@ Correspondence of Python types and Lisp types in cl4py:
 | cl4py.LispWrapper  | <-> | #N? handle                           |
 | fractions.Fraction | <-> | ratio                                |
 | numpy.array        | <-> | array                                |
+
+One peculiarity is that when a Python tuple is converted to lisp list, all
+strings occurring therein are interpreted as Lisp symbols.  This way,
+Python tuples can be used as a somewhat elegant notation for S-expressions.
 
 '''
 import reprlib
@@ -63,12 +65,13 @@ python_name_substitutions = {
     '-'  : '_',
     '*'  : 'O',
     '+'  : 'X',
-    '<'  : 'lt',
     '<=' : 'le',
-    '='  : 'sim',
+    '<'  : 'lt',
     '/=' : 'ne',
-    '>'  : 'gt',
     '>=' : 'ge',
+    '>'  : 'gt',
+    '='  : 'sim',
+    '~'  : 'tilde',
 }
 
 
@@ -223,7 +226,7 @@ def cdr(arg):
 
 
 def null(arg):
-    if arg is ():
+    if arg == ():
         return True
     if (isinstance(arg,Symbol)
         and arg.name == "NIL"

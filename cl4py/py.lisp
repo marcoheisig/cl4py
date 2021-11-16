@@ -64,22 +64,29 @@
 ;;;
 ;;; Reader Macros
 
+;;; The #n! reader macro declares that a handle can be freed.
 (defun sharpsign-exclamation-mark (s c n)
   (declare (ignore s c))
   (free-handle n)
   (values))
 
+;;; The #n? reader macro retrieves the object corresponding to the supplied
+;;; handle.
 (defun sharpsign-question-mark (s c n)
   (declare (ignore s c))
   (handle-object n))
 
-(defun sharpsign-n (s c n) ; Numpy Arrays
+;;; The #N reader macro is used to retrieve NumPy arrays.  For performance
+;;; reasons, those arrays are not communicated as text, but in a binary
+;;; format via the file system.
+(defun sharpsign-n (s c n)
   (declare (ignore c n))
   (let* ((file (read s))
          (array (load-array file)))
     (delete-file file)
     array))
 
+;;; We introduce a curly bracket notation to send hash tables.
 (defun left-curly-bracket (stream char)
   (declare (ignore char))
   (let ((items (read-delimited-list #\} stream t))
@@ -115,9 +122,9 @@
 ;;; Printing for Python
 ;;;
 ;;; Not all Lisp objects can be communicated to Python.  Most notably,
-;;; functions and CLOS instances. Instead, we walk all objects before
-;;; sending them to Python and replace occurrences of non serializable
-;;; objects with reference handles.
+;;; functions and other non-builtin objects. Instead, we walk all objects
+;;; before sending them to Python and replace occurrences of non
+;;; serializable objects with reference handles.
 ;;;
 ;;; The printed structure is scanned first, such that circular structure
 ;;; can be printed correctly using #N= and #N#.
@@ -795,4 +802,5 @@
             (finish-output python)
             (pyprint (get-output-stream-string lisp-output) python)))))))
 
+;;; Finally, launch the REPL.
 (cl4py)
