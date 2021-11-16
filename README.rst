@@ -48,22 +48,22 @@ you can execute Lisp code on it:
 
     # Use cl4py.List instead of tuples to avoid the automatic conversion of
     # strings to symbols.
-    >>> lisp.eval( cl4py.List(cl4py.Symbol('STRING=', 'CL'), 'foo', 'bar') )
+    >>> lisp.eval( cl4py.List(cl4py.Symbol('STRING='), 'foo', 'bar') )
     ()
-    >>> lisp.eval( cl4py.List(cl4py.Symbol('STRING=', 'CL'), 'foo', 'foo') )
+    >>> lisp.eval( cl4py.List(cl4py.Symbol('STRING='), 'foo', 'foo') )
     True
 
     # Here is how you can lookup a symbol's value:
-    >>> lisp.eval(cl4py.Symbol('*PRINT-BASE*', "COMMON-LISP"))
+    >>> lisp.eval(cl4py.Symbol('*PRINT-BASE*', 'COMMON-LISP'))
     10
 
     # Of course you can also use Lisp macros:
     >>> lisp.eval( ('loop', 'for', 'i', 'below', 5, 'collect', 'i') )
     List(0, 1, 2, 3, 4)
 
-    >>> lisp.eval( ('WITH-OUTPUT-TO-STRING', ('STREAM',),
-                      ('PRINC', 12, 'STREAM'),
-                      ('PRINC', 34, 'STREAM')) )
+    >>> lisp.eval( ('with-output-to-string', ('stream',),
+                      ('princ', 12, 'stream'),
+                      ('princ', 34, 'stream')) )
     '1234'
 
 A cl4py.Lisp object not only provides ``eval``, but also methods for
@@ -80,7 +80,7 @@ looking up functions and packages:
     Fraction(1, 2)
 
     # Lisp packages are automatically converted to Python modules.
-    >>> cl = lisp.function('find-package')('CL')
+    >>> cl = lisp.find_package('CL')
     >>> cl.oddp(5)
     True
 
@@ -163,8 +163,8 @@ installing and loading Quicklisp automatically: ``quicklisp=True``
 
 .. code:: python
 
-    >>> lisp = cl4py.Lisp(quicklisp=True); cl = lisp.function('find-package')('CL')
-    >>> ql = cl.find_package('QL')
+    >>> lisp = cl4py.Lisp(quicklisp=True);
+    >>> ql = lisp.find_package('QL')
     >>> ql.quickload('YOUR-SYSTEM')
 
 
