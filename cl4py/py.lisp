@@ -155,7 +155,8 @@
 (defun pyprint (object &optional (stream *standard-output*))
   (let ((*pyprint-table* (make-hash-table :test #'eql))
         (*pyprint-counter* 0)
-        (*package* (find-package '#:cl4py-empty-package)))
+        (*package* (find-package '#:cl4py-empty-package))
+        (*print-readably* t))
     (pyprint-scan object)
     (pyprint-write object stream)
     (terpri stream)
@@ -237,7 +238,12 @@
   (write symbol :stream stream))
 
 (defmethod pyprint-write ((string string) stream)
-  (write string :stream stream))
+  (write-char #\" stream)
+  (loop for char across string do
+    (when (member char '(#\" #\\))
+      (write-char #\\ stream))
+    (write-char char stream))
+  (write-char #\" stream))
 
 (defmethod pyprint-write ((character character) stream)
   (write character :stream stream))

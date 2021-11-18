@@ -76,7 +76,7 @@ python_name_substitutions = {
 
 
 class Symbol(LispObject):
-    def __init__(self, name, package=None):
+    def __init__(self, name: str, package=None):
         self.name = name
         self.package = package
 
