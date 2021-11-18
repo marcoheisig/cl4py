@@ -75,6 +75,15 @@ python_name_substitutions = {
 }
 
 
+def python_name(name: str):
+    if name in python_name_translations:
+        return python_name_translations[name]
+    else:
+        for (old, new) in python_name_substitutions.items():
+            name = name.replace(old, new)
+        return name.lower()
+
+
 class Symbol(LispObject):
     def __init__(self, name: str, package=None):
         self.name = name
@@ -93,17 +102,14 @@ class Symbol(LispObject):
         return hash((self.name, self.package))
 
     def __eq__(self, other):
-        return (self.name, self.package) == (other.name, other.package)
+        if isinstance(other, Symbol):
+            return (self.name, self.package) == (other.name, other.package)
+        else:
+            return False
 
     @property
     def python_name(self):
-        name = self.name
-        if name in python_name_translations:
-            return python_name_translations[name]
-        else:
-            for (old, new) in python_name_substitutions.items():
-                name = name.replace(old, new)
-            return name.lower()
+        return python_name(self.name)
 
 
 class Keyword(Symbol):

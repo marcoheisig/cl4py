@@ -6,7 +6,6 @@ import importlib.util
 from fractions import Fraction
 from enum import Enum
 from .data import *
-from .circularity import *
 
 # An implementation of the Common Lisp reader algorithm, with the following
 # simplifications and changes:
@@ -39,6 +38,10 @@ class Readtable:
     def __init__(self, lisp):
         self.lisp = lisp
         self.macro_characters = {}
+        # The variable tables is a stack of dicts, where one dict is pushed
+        # for each non-recursive call to read.  These dicts are used to
+        # resolve circular references.
+        self.tables = []
         self.set_macro_character('(', left_parenthesis)
         self.set_macro_character(')', right_parenthesis)
         self.set_macro_character('{', left_curly_bracket)
@@ -93,11 +96,14 @@ class Readtable:
     def read(self, stream, recursive=False):
         if not isinstance(stream, Stream):
             stream = Stream(stream, debug=self.lisp.debug)
-        value = self.read_aux(stream)
         if recursive:
-            return value
+            return self.read_aux(stream)
         else:
-            return circularize(value)
+            self.tables.append({})
+            try:
+                return self.read_aux(stream)
+            finally:
+                self.tables.pop()
 
 
     def read_aux(self, stream):
@@ -220,10 +226,10 @@ class Readtable:
             if x == delim:
                 return head.cdr
             elif x == '.':
-                tail.cdr = self.read(stream, True)
+                tail.cdr = self.read_aux(stream)
             else:
                 stream.unread_char()
-                cons = Cons(self.read(stream, True), ())
+                cons = Cons(self.read_aux(stream), ())
                 tail.cdr = cons
                 tail = cons
 
@@ -316,7 +322,7 @@ def sharpsign_backslash(r, s, c, n):
         if key in character_names:
             return character_names[key]
         else:
-            raise RuntimeError('Not a valid character name: {}'.format('key'))
+            raise RuntimeError('Not a valid character name: {}'.format(key))
 
 
 def sharpsign_single_quote(r, s, c, n):
@@ -361,25 +367,50 @@ def sharpsign_c(r, s, c, n):
     return complex(real, imag)
 
 
+SYNTAX_TAG = 0
+FUNCTION_TAG = 1
+CONSTANT_TAG = 2
+VARIABLE_TAG = 3
+
+
 def sharpsign_m(r, s, c, n):
     data = r.read_aux(s)
-    name, alist = data.car, data.cdr
-    spec = importlib.machinery.ModuleSpec(name, None)
+    pkgname, alist = data.car, data.cdr
+    spec = importlib.machinery.ModuleSpec(pkgname, None)
     module = importlib.util.module_from_spec(spec)
     module.__class__ = Package
-    # Now register all exported functions.
+    # Now register the package attributes.
     for cons in alist:
-        setattr(module, cons.car.python_name, cons.cdr)
+        tag = cons.car
+        symbol = cons.cdr.car
+        if symbol == True:
+            setattr(module, "T", True)
+        elif symbol == ():
+            setattr(module, "NIL", ())
+        elif tag == SYNTAX_TAG:
+            def syntax(lisp, symbol):
+                return lambda *args: lisp.eval((symbol, *args))
+            setattr(module, symbol.python_name, syntax(r.lisp, symbol))
+        elif tag == FUNCTION_TAG:
+            setattr(module, symbol.python_name, cons.cdr.cdr.car)
+        elif tag == CONSTANT_TAG:
+            setattr(module, symbol.python_name, cons.cdr.cdr.car)
+        elif tag == VARIABLE_TAG:
+            # TODO
+            pass
+        else:
+            raise RuntimeError('Not a valid tag: {}'.format(tag))
     return module
 
 
 def sharpsign_equal(r, s, c, n):
     value = r.read_aux(s)
-    return SharpsignEquals(n, value)
+    r.tables[-1][n] = value
+    return value
 
 
 def sharpsign_sharpsign(r, s, c, n):
-    return SharpsignSharpsign(n)
+    return r.tables[-1][n]
 
 
 def sharpsign_n(r, s, c, n):
