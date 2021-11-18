@@ -21,6 +21,7 @@
    #:generic-function-name)
   (:export
    #:cl4py
+   #:quit
    #:class-information
    #:dtype-from-type
    #:dtype-from-code
@@ -775,9 +776,20 @@
           (push (cons name member-function) alist))))
     alist))
 
+(defun maybe-funcall (package name &rest args)
+  (let ((package (find-package package)))
+    (when (packagep package)
+      (let ((symbol (find-symbol name package)))
+        (when (fboundp symbol)
+          (apply symbol args))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;;
 ;;; The cl4py REPL
+
+(defun quit ()
+  (maybe-funcall "UIOP" "QUIT")
+  (maybe-funcall "CL-USER" "QUIT"))
 
 (defun cl4py (&rest args)
   (declare (ignore args))
@@ -807,13 +819,13 @@
                 (pyprint
                  (list (class-name (class-of condition))
                        (if *backtrace*
-                           (concatenate 'string
-                                        (condition-string condition)
-                                        (with-output-to-string (str)
-                                          (funcall (intern "PRINT-CONDITION-BACKTRACE"
-                                                           (find-package :uiop))
-                                                   condition
-                                                   :stream str))))
+                           (concatenate
+                            'string
+                             (condition-string condition)
+                             (with-output-to-string (stream)
+                               (maybe-funcall
+                                "UIOP" "PRINT-CONDITION-BACKTRACE"
+                                condition :stream stream))))
                        (condition-string condition))
                  python)
                 (pyprint nil python))

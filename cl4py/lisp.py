@@ -23,6 +23,7 @@ class Lisp:
                              stdout = subprocess.PIPE,
                              stderr = subprocess.PIPE,
                              shell = False)
+        self.process = p
         self.stdin = io.TextIOWrapper(p.stdin, write_through=True,
                                       line_buffering=1,
                                       encoding='utf-8')
@@ -56,6 +57,7 @@ class Lisp:
     def backtrace(self) -> bool:
         return self._backtrace
 
+
     @backtrace.setter
     def backtrace(self, value: bool) -> bool:
         self.eval ( ('setf', 'cl4py::*backtrace*', value))
@@ -64,10 +66,10 @@ class Lisp:
 
 
     def __del__(self):
-        try:
-            self.stdin.write('(uiop:quit 0)\n')
-        except:                 # pylint: disable=bare-except
-            pass
+        alive = self.process.poll() == None
+        if alive:
+            self.stdin.write('(cl4py:quit)\n')
+            self.process.wait()
 
 
     def eval(self, expr):
