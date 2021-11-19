@@ -16,7 +16,7 @@ class Lisp:
     _backtrace: bool
 
     def __init__(self, cmd=_DEFAULT_COMMAND, quicklisp=False, debug=False,
-                 backtrace=False):
+                 backtrace=True):
         command = list(cmd)
         p = subprocess.Popen(command + [resource_filename(__name__, 'py.lisp')],
                              stdin = subprocess.PIPE,
