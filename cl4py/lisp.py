@@ -60,7 +60,7 @@ class Lisp:
 
     @backtrace.setter
     def backtrace(self, value: bool) -> bool:
-        self.eval ( ('setf', 'cl4py::*backtrace*', value))
+        self.eval ( ('setf', 'cl4py::*backtrace*', Quote(value)))
         self._backtrace = value
         return self._backtrace
 
