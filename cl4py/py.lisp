@@ -155,11 +155,11 @@
 
 (defun pyprint (object &optional (stream *standard-output*))
   (let ((*pyprint-table* (make-hash-table :test #'eql))
-        (*pyprint-counter* 0)
-        (*package* (find-package '#:cl4py-empty-package))
-        (*print-readably* t))
+        (*pyprint-counter* 0))
     (pyprint-scan object)
-    (pyprint-write object stream)
+    (with-standard-io-syntax
+      (let ((*package* (find-package '#:cl4py-empty-package)))
+        (pyprint-write object stream)))
     (terpri stream)
     object))
 
