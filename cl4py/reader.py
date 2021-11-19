@@ -21,7 +21,7 @@ from .data import *
 
 integer_regex = re.compile(r"[+-]?[0-9]+\.?")
 ratio_regex = re.compile(r"([+-]?[0-9]+)/([0-9]+)")
-float_regex = re.compile(r"([+-]?[0-9]+(?:\.[0-9]+)?)(?:([eEsSfFdDlL])([0-9]+))?")
+float_regex = re.compile(r"([+-]?[0-9]+(?:\.[0-9]+)?)(?:([eEsSfFdDlL])([+-]?[0-9]+))?")
 symbol_regex = re.compile(r"(?:([^:]*?)(::?))?([^:]+)")
 
 SyntaxType = Enum('SyntaxType',
@@ -181,15 +181,15 @@ class Readtable:
             exponent_marker = m.group(2)
             exponent = m.group(3)
             if not exponent_marker:
-                return numpy.float32(base) * (numpy.float32(10) ** numpy.float32(exponent))
+                return numpy.float32(base + 'e' + exponent)
             elif exponent_marker in 'sS':
-                return numpy.float16(base) * (numpy.float16(10) ** numpy.float16(exponent))
+                return numpy.float16(base + 'e' + exponent)
             elif exponent_marker in 'eEfF':
-                return numpy.float32(base) * (numpy.float32(10) ** numpy.float32(exponent))
+                return numpy.float32(base + 'e' + exponent)
             elif exponent_marker in 'dD':
-                return numpy.float64(base) * (numpy.float64(10) ** numpy.float64(exponent))
+                return numpy.float64(base + 'e' + exponent)
             elif exponent_marker in 'lL':
-                return numpy.longdouble(base) * (numpy.longdouble(10) ** numpy.longdouble(exponent))
+                return numpy.longdouble(base + 'e' + exponent)
         # symbol
         m = re.fullmatch(symbol_regex, token)
         if m:
