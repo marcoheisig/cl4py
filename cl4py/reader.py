@@ -383,21 +383,22 @@ def sharpsign_m(r, s, c, n):
     for cons in alist:
         tag = cons.car
         symbol = cons.cdr.car
+        def register(key, value):
+            module.__dict__[key] = value
         if symbol == True:
-            setattr(module, "T", True)
+            register("T", True)
         elif symbol == ():
-            setattr(module, "NIL", ())
+            register("NIL", ())
         elif tag == SYNTAX_TAG:
             def syntax(lisp, symbol):
                 return lambda *args: lisp.eval((symbol, *args))
-            setattr(module, symbol.python_name, syntax(r.lisp, symbol))
+            register(symbol.python_name, syntax(r.lisp, symbol))
         elif tag == FUNCTION_TAG:
-            setattr(module, symbol.python_name, cons.cdr.cdr.car)
+            register(symbol.python_name, cons.cdr.cdr.car)
         elif tag == CONSTANT_TAG:
-            setattr(module, symbol.python_name, cons.cdr.cdr.car)
+            register(symbol.python_name, cons.cdr.cdr.car)
         elif tag == VARIABLE_TAG:
-            # TODO
-            pass
+            register(symbol.python_name, LispVariable(r.lisp, symbol))
         else:
             raise RuntimeError('Not a valid tag: {}'.format(tag))
     return module

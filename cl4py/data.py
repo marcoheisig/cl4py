@@ -121,8 +121,19 @@ class Keyword(Symbol):
 
 
 class Package(LispObject, type(reprlib)):
-    def __getitem__(self, name):
-        return self.__dict__[name]
+    def __getattribute__(self, name):
+        attr = super().__getattribute__(name)
+        if hasattr(attr, '__get__'):
+            return attr.__get__(name)
+        else:
+            return attr
+
+    def __setattr__(self, name, value):
+        attr = super().__getattribute__(name)
+        if hasattr(attr, '__set__'):
+            return attr.__set__(name, value)
+        else:
+            raise AttributeError()
 
 
 class Cons (LispObject):
@@ -260,3 +271,15 @@ class LispWrapper (LispObject):
             restAndKeys.append(Keyword(key.upper()))
             restAndKeys.append(Quote(value))
         return self.lisp.eval(List(Symbol('FUNCALL', 'CL'), Quote(self), *restAndKeys))
+
+
+class LispVariable (LispObject):
+    def __init__(self, lisp, symbol):
+        self.lisp = lisp
+        self.symbol = symbol
+
+    def __get__(self, obj, objtype=None):
+        return self.lisp.eval(self.symbol)
+
+    def __set__(self, obj, value):
+        return self.lisp.eval((Symbol('SETQ', 'CL'), self.symbol, Quote(value)))
