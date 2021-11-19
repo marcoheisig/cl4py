@@ -94,6 +94,14 @@ looking up functions and packages:
     >>> cl.mapcar(cl.constantly(4), (1, 2, 3))
     List(4, 4, 4)
 
+    # cl4py even supports macros and special forms as a thin
+    # wrapper around lisp.eval.
+    >>> cl.loop('repeat', 5, 'collect', 42)
+    List(42, 42, 42, 42, 42)
+
+    >>> cl.progn(5, 6, 7, ('+', 4, 4))
+    8
+
 When converting Common Lisp packages to Python modules, we run into the
 problem that not every Common Lisp symbol name is a valid Python
 identifier.  As a remedy, so we attempt to substitute problematic
@@ -115,6 +123,14 @@ see this substitution rules in action:
     # are replaced by _, O, X, le, lt, sim, ne, ge, ge, gt, and tilde, respectively.
     >>> cl.stringgt('baz', 'bar')
     2
+
+    # Earmuffs are stripped
+    >>> cl.print_base
+    10
+
+    # Constants are capitalized
+    >>> cl.MOST_POSITIVE_DOUBLE_FLOAT
+    1.7976931348623157e+308
 
 The cl4py module provides a Cons class that mimics cons cells in Lisp.
 

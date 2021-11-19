@@ -282,6 +282,15 @@ class LispWrapper (LispObject):
         return self.lisp.eval(List(Symbol('FUNCALL', 'CL'), Quote(self), *restAndKeys))
 
 
+class LispMacro (LispObject):
+    def __init__(self, lisp, symbol):
+        self.lisp = lisp
+        self.symbol = symbol
+
+    def __call__(self, *args):
+        return self.lisp.eval((self.symbol, *args))
+
+
 class LispVariable (LispObject):
     def __init__(self, lisp, symbol):
         self.lisp = lisp

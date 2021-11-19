@@ -390,9 +390,7 @@ def sharpsign_m(r, s, c, n):
         elif symbol == ():
             register("NIL", ())
         elif tag == SYNTAX_TAG:
-            def syntax(lisp, symbol):
-                return lambda *args: lisp.eval((symbol, *args))
-            register(symbol.python_name, syntax(r.lisp, symbol))
+            register(symbol.python_name, LispMacro(r.lisp, symbol))
         elif tag == FUNCTION_TAG:
             register(symbol.python_name, cons.cdr.cdr.car)
         elif tag == CONSTANT_TAG:

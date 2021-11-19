@@ -45,6 +45,8 @@ def test_finding_functions(lisp, cl):
     assert cl.cons(5, None) == cl4py.List(5)
     assert cl.remove(5, [1, -5, 2, 7, 5, 9], key=cl.abs) == [1, 2, 7, 9]
     assert cl.mapcar(cl.constantly(4), (1, 2, 3)) == cl4py.List(4, 4, 4)
+    assert cl.loop('repeat', 5, 'collect', 42) == List(42, 42, 42, 42, 42)
+    assert cl.progn(5, 6, 7, ('+', 4, 4)) == 8
 
 
 def test_pythony_names(cl):
@@ -55,6 +57,8 @@ def test_pythony_names(cl):
     )
     assert cl.add(2,3,4,5) == 14
     assert cl.stringgt('baz', 'bar') == 2
+    assert cl.print_base == 10
+    assert cl.MOST_POSITIVE_DOUBLE_FLOAT == 1.7976931348623157e+308
 
 
 def test_conses(cl, lisp):
