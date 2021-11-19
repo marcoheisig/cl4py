@@ -396,7 +396,7 @@ def sharpsign_m(r, s, c, n):
         elif tag == FUNCTION_TAG:
             register(symbol.python_name, cons.cdr.cdr.car)
         elif tag == CONSTANT_TAG:
-            register(symbol.python_name, cons.cdr.cdr.car)
+            register(symbol.python_name.upper(), cons.cdr.cdr.car)
         elif tag == VARIABLE_TAG:
             register(symbol.python_name, LispVariable(r.lisp, symbol))
         else:

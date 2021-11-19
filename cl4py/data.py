@@ -61,6 +61,7 @@ python_name_translations = {
     '1-'  : 'dec',
 }
 
+
 python_name_substitutions = {
     '-'  : '_',
     '*'  : 'O',
@@ -76,9 +77,17 @@ python_name_substitutions = {
 
 
 def python_name(name: str):
+    # Use explicit translations for certain names.
     if name in python_name_translations:
         return python_name_translations[name]
     else:
+        # Strip earmuffs.
+        if ((len(name) > 2) and
+            (name[0] in '*+') and
+            (name[0] == name[-1]) and
+            (name[0] != name[1])): # Don't strip earmuffs off *** or +++
+            name = name[1:-1]
+        # Substitute problematic characters.
         for (old, new) in python_name_substitutions.items():
             name = name.replace(old, new)
         return name.lower()
