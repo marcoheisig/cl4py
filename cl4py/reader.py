@@ -179,7 +179,7 @@ class Readtable:
         if m:
             base = m.group(1)
             exponent_marker = m.group(2)
-            exponent = m.group(3)
+            exponent = m.group(3) or 0
             if not exponent_marker:
                 return numpy.float32(base + 'e' + exponent)
             elif exponent_marker in 'sS':
