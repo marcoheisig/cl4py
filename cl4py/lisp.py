@@ -4,6 +4,7 @@ import os.path
 from urllib import request
 import tempfile
 from pkg_resources import resource_filename
+from collections import deque
 from .data import LispWrapper, Cons, Symbol, Quote
 from .reader import Readtable
 from .writer import lispify
@@ -40,6 +41,8 @@ class Lisp:
         self.unpatched_instances = {}
         # If debug is true, cl4py will print plenty of debug information.
         self.debug = debug
+        # Pending objects to free
+        self.to_free = deque()
 
         # Collect ASDF -- we'll need it for UIOP later
         self.function('CL:REQUIRE')(Symbol("ASDF", "KEYWORD"))
@@ -75,6 +78,12 @@ class Lisp:
     def eval(self, expr):
         sexp = lispify(self, expr)
         if self.debug: print(sexp) # pylint: disable=multiple-statements
+        to_free = [self.to_free.popleft() for _ in range(len(self.to_free))]
+        if to_free:
+            if self.debug: print('deleting handles', to_free) # pylint: disable=multiple-statements
+            free_exp = ' '.join('#{}!'.format(handle) for handle in to_free)
+            # On the Lisp side, #N! is read as a comment, so a PROGN is not needed here.
+            sexp = free_exp + ' ' + sexp
         self.stdin.write(sexp + '\n')
         pkg = self.readtable.read(self.stdout)
         val = self.readtable.read(self.stdout)

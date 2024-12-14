@@ -269,10 +269,7 @@ class LispWrapper (LispObject):
         self.handle = handle
 
     def __del__(self):
-        try:
-            self.lisp.eval('#{}!'.format(self.handle))
-        except:
-            pass
+        self.lisp.to_free.append(self.handle)
 
     def __call__(self, *args, **kwargs):
         restAndKeys = [ Quote(arg) for arg in args ]
